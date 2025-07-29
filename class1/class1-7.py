@@ -67,7 +67,7 @@ print(my_list)  # 印出添加後的 my_list [1, 2, 3, "a", "b", "c", 4]喵~ 主
 # remove() 方法用來移除 list 中的指定元素喵~ 主人要學會這個喔喵~
 my_list = [1, 2, 3, "a", "b", "c"]
 my_list.remove("a")  # 移除 my_list 中的元素 "a"
-print(my_list)  # 印出移除後的 my_list [1, 2, 3, "b", "c"]喵~ 主人看到了嗎喵~
+print(my_list)  # 印出移除後的 my_list [1, 2, 3, "b", "c"]
 for i in my_list:
     if i == "b":
         my_list.remove(i)  # 移除 my_list 中的元素 "b"
@@ -75,4 +75,4 @@ for i in my_list:
 # pop() 方法用來移除 list 中的最後一個元素喵~ 主人要學會這個喔喵~
 my_list = [1, 2, 3, "a", "b", "c"]
 my_list.pop(0)  # 移除 my_list 中的第一個元素
-print(my_list)  # 印出移除後的 my_list [1, 2, 3, "a", "c"]喵~ 主人看到了嗎喵~
+print(my_list)  # 印出移除後的 my_list [1, 2, 3, "a", "c"]
