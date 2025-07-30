@@ -110,11 +110,11 @@ def main():
         # 遊戲邏輯更新
         # ============================
 
+        # 處理鍵盤輸入（在更新遊戲狀態之前，確保在lock delay期間可以旋轉）
+        game.handle_input(keys_pressed, keys_just_pressed)
+
         # 更新遊戲狀態
         game.update(dt)
-
-        # 處理鍵盤輸入
-        game.handle_input(keys_pressed, keys_just_pressed)
 
         # ============================
         # 畫面渲染

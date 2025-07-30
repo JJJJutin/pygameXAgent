@@ -55,6 +55,8 @@ class Game:
         # T-spin 檢測系統
         self.last_move_was_rotation = False  # 最後一個動作是否為旋轉
         self.t_spin_type = None  # T-spin 類型 ("tspin", "mini", None)
+        self.last_kick_index = None  # 最後使用的kick索引
+        self.last_kick_offset = None  # 最後使用的kick偏移量
 
         # Back-to-back 系統
         self.back_to_back_count = 0  # 連續 back-to-back 次數
@@ -202,6 +204,8 @@ class Game:
         self.lock_delay_resets = 0
         self.last_move_was_rotation = False
         self.t_spin_type = None
+        self.last_kick_index = None
+        self.last_kick_offset = None
 
         # 生成新方塊
         self.current_tetromino = self.next_tetromino
@@ -257,6 +261,10 @@ class Game:
             original_rotation = self.current_tetromino.rotation
             new_rotation = (original_rotation + 1) % 4
 
+            # 重置kick資訊
+            self.last_kick_index = None
+            self.last_kick_offset = None
+
             # 嘗試直接旋轉
             if self.grid.is_valid_position_at(
                 self.current_tetromino.get_rotated_shape(new_rotation),
@@ -280,6 +288,10 @@ class Game:
         if keys_just_pressed.get(pygame.K_z, False):
             original_rotation = self.current_tetromino.rotation
             new_rotation = (original_rotation - 1) % 4
+
+            # 重置kick資訊
+            self.last_kick_index = None
+            self.last_kick_offset = None
 
             # 嘗試直接旋轉
             if self.grid.is_valid_position_at(
@@ -393,7 +405,19 @@ class Game:
             self.das_active_right = False
 
     def try_wall_kick(self, old_rotation, new_rotation):
-        """嘗試踢牆操作（完整 SRS Wall Kick 系統）"""
+        """
+        增強版踢牆操作（標準SRS + 額外kick序列）
+        在標準SRS基礎上添加額外的kick嘗試，提高成功率
+        """
+        # 首先嘗試標準SRS wall kick
+        if self.try_wall_kick_standard(old_rotation, new_rotation):
+            return True
+
+        # 如果標準kick失敗，嘗試額外的kick序列
+        return self.try_additional_kicks(old_rotation, new_rotation)
+
+    def try_wall_kick_standard(self, old_rotation, new_rotation):
+        """標準SRS Wall Kick實現"""
         # 根據方塊類型選擇對應的 Wall Kick 資料
         if self.current_tetromino.shape_type == "I":
             kick_data_type = "I"
@@ -408,7 +432,7 @@ class Game:
         )
 
         # 嘗試每個踢牆位置
-        for kick_x, kick_y in kick_tests:
+        for kick_index, (kick_x, kick_y) in enumerate(kick_tests):
             test_x = self.current_tetromino.x + kick_x
             test_y = self.current_tetromino.y + kick_y
 
@@ -420,13 +444,63 @@ class Game:
                 self.current_tetromino.x = test_x
                 self.current_tetromino.y = test_y
                 self.current_tetromino.rotation = new_rotation
+
+                # 記錄使用的kick類型（用於T-Spin判斷）
+                if self.current_tetromino.shape_type == "T":
+                    self.last_kick_index = kick_index
+                    self.last_kick_offset = (kick_x, kick_y)
+
                 return True
 
         return False
 
+    def try_additional_kicks(self, old_rotation, new_rotation):
+        """嘗試額外的kick序列（針對極端情況）"""
+        if self.current_tetromino.shape_type != "T":
+            return False  # 目前只為T方塊添加額外kick
+
+        # 定義額外的kick序列
+        extra_kicks = self.get_extra_kick_sequence(old_rotation, new_rotation)
+
+        rotated_shape = self.current_tetromino.get_rotated_shape(new_rotation)
+
+        for kick_index, (kick_x, kick_y) in enumerate(extra_kicks):
+            test_x = self.current_tetromino.x + kick_x
+            test_y = self.current_tetromino.y + kick_y
+
+            if self.grid.is_valid_position_at(rotated_shape, test_x, test_y):
+                # 移動到有效位置
+                self.current_tetromino.x = test_x
+                self.current_tetromino.y = test_y
+                self.current_tetromino.rotation = new_rotation
+
+                # 記錄額外kick信息
+                self.last_kick_index = 10 + kick_index  # 區別於標準kick
+                self.last_kick_offset = (kick_x, kick_y)
+
+                return True
+
+        return False
+
+    def get_extra_kick_sequence(self, old_rotation, new_rotation):
+        """獲取額外的kick序列"""
+        extra_kick_data = {
+            (0, 1): [(1, 0), (2, 0), (0, 1), (1, 1), (-2, 0), (1, -1)],  # 上->右
+            (1, 2): [(0, -1), (1, -1), (-1, 0), (0, -2), (-1, -1)],  # 右->下
+            (2, 3): [(-1, 0), (-2, 0), (0, -1), (-1, -1), (2, 0)],  # 下->左
+            (3, 0): [(0, 1), (-1, 1), (1, 0), (0, 2), (1, 1)],  # 左->上
+            # 逆時鐘旋轉的額外kick
+            (0, 3): [(-1, 0), (-2, 0), (0, 1), (-1, 1), (2, 0)],  # 上->左
+            (3, 2): [(0, -1), (-1, -1), (1, 0), (0, -2), (1, -1)],  # 左->下
+            (2, 1): [(1, 0), (2, 0), (0, -1), (1, -1), (-2, 0)],  # 下->右
+            (1, 0): [(0, 1), (1, 1), (-1, 0), (0, 2), (-1, 1)],  # 右->上
+        }
+
+        return extra_kick_data.get((old_rotation, new_rotation), [])
+
     def check_t_spin(self):
         """
-        檢測 T-spin 動作（使用標準 3-corner 規則）
+        檢測 T-spin 動作（使用標準 3-corner 和 2-corner 規則）
         返回：T-spin 類型 ("tspin", "mini", None)
         """
         # 只有 T 方塊才能進行 T-spin
@@ -444,87 +518,85 @@ class Game:
 
         # 檢查 T 方塊周圍的 4 個對角位置
         corners = [
-            (center_x - 1, center_y - 1),  # 左上角
-            (center_x + 1, center_y - 1),  # 右上角
-            (center_x - 1, center_y + 1),  # 左下角
-            (center_x + 1, center_y + 1),  # 右下角
+            (center_x - 1, center_y - 1),  # 左上角 (0)
+            (center_x + 1, center_y - 1),  # 右上角 (1)
+            (center_x - 1, center_y + 1),  # 左下角 (2)
+            (center_x + 1, center_y + 1),  # 右下角 (3)
         ]
 
-        filled_corners = 0
-        for corner_x, corner_y in corners:
+        # 檢查每個角落是否被填充
+        filled_corners = []
+        for i, (corner_x, corner_y) in enumerate(corners):
             # 檢查是否為牆壁、地板或已放置的方塊
             # 根據標準規則：牆壁和地板也算作被佔用
-            if (
-                corner_x < 0  # 左牆壁
-                or corner_x >= GRID_WIDTH  # 右牆壁
-                or corner_y < 0  # 頂部（雖然通常不會發生）
-                or corner_y >= GRID_HEIGHT  # 地板
-                or (
-                    corner_y >= 0
-                    and corner_x >= 0
-                    and corner_x < GRID_WIDTH
-                    and self.grid.grid[corner_y][corner_x] != BLACK
-                )  # 已放置的方塊
-            ):
-                filled_corners += 1
+            is_filled = False
+
+            if corner_x < 0 or corner_x >= GRID_WIDTH:
+                # 左右牆壁
+                is_filled = True
+            elif corner_y >= GRID_HEIGHT:
+                # 地板
+                is_filled = True
+            elif corner_y < 0:
+                # 頂部邊界（通常不會發生，但為了安全）
+                is_filled = True
+            elif self.grid.grid[corner_y][corner_x] != BLACK:
+                # 已放置的方塊
+                is_filled = True
+
+            if is_filled:
+                filled_corners.append(i)
 
         # Debug 輸出
         print(
-            f"T-spin 檢測: 中心位置=({center_x},{center_y}), 被填充的角落={filled_corners}/4, 旋轉={self.last_move_was_rotation}"
+            f"T-spin 檢測: 中心位置=({center_x},{center_y}), 被填充的角落={len(filled_corners)}/4 {filled_corners}, 旋轉={self.current_tetromino.rotation}"
         )
 
-        # 需要至少 3 個角落被填充才算 T-spin
-        if filled_corners < 3:
+        # 3-corner 規則：需要至少 3 個角落被填充才算 T-spin
+        if len(filled_corners) < 3:
             return None
 
-        # 判斷是正常 T-spin 還是 Mini T-spin
+        # 2-corner 規則：判斷是正常 T-spin 還是 Mini T-spin
         # 根據 T 方塊的朝向檢查前角（指向側）
         rotation = self.current_tetromino.rotation
 
         if rotation == 0:  # T 朝上
-            front_corners = [
-                (center_x - 1, center_y - 1),  # 左上
-                (center_x + 1, center_y - 1),  # 右上
-            ]
+            front_corners = [0, 1]  # 左上、右上
         elif rotation == 1:  # T 朝右
-            front_corners = [
-                (center_x + 1, center_y - 1),  # 右上
-                (center_x + 1, center_y + 1),  # 右下
-            ]
+            front_corners = [1, 3]  # 右上、右下
         elif rotation == 2:  # T 朝下
-            front_corners = [
-                (center_x - 1, center_y + 1),  # 左下
-                (center_x + 1, center_y + 1),  # 右下
-            ]
+            front_corners = [2, 3]  # 左下、右下
         else:  # rotation == 3, T 朝左
-            front_corners = [
-                (center_x - 1, center_y - 1),  # 左上
-                (center_x - 1, center_y + 1),  # 左下
-            ]
+            front_corners = [0, 2]  # 左上、左下
 
         # 檢查前角（指向側）的填充情況
-        front_filled = 0
-        for corner_x, corner_y in front_corners:
-            if (
-                corner_x < 0
-                or corner_x >= GRID_WIDTH
-                or corner_y < 0
-                or corner_y >= GRID_HEIGHT
-                or (
-                    corner_y >= 0
-                    and corner_x >= 0
-                    and corner_x < GRID_WIDTH
-                    and self.grid.grid[corner_y][corner_x] != BLACK
-                )
-            ):
-                front_filled += 1
+        front_filled_count = sum(
+            1 for corner in front_corners if corner in filled_corners
+        )
 
-        # 如果前角（指向側）的兩個角都被填充，則為正常 T-spin
-        # 否則為 Mini T-spin
-        if front_filled == 2:
+        # 檢查特殊kick例外情況
+        is_tst_or_fin_kick = False
+        if hasattr(self, "last_kick_index") and self.last_kick_index is not None:
+            # TST kick (最後一個kick) 和 Fin kick (倒數第二個kick) 的檢測
+            # 在 SRS JLSTZ 中，最後一個kick通常是 TST/Fin kick
+            if self.last_kick_index == 4:  # 最後一個kick索引
+                is_tst_or_fin_kick = True
+                print(
+                    f"檢測到特殊kick: 索引={self.last_kick_index}, 偏移={self.last_kick_offset}"
+                )
+            elif (
+                self.last_kick_offset and abs(self.last_kick_offset[1]) == 2
+            ):  # 垂直移動2格的kick
+                is_tst_or_fin_kick = True
+                print(f"檢測到Fin kick: 偏移={self.last_kick_offset}")
+
+        # 判斷T-Spin類型
+        if front_filled_count == 2 or is_tst_or_fin_kick:
+            # 如果前角（指向側）的兩個角都被填充，或使用了特殊kick，則為正常 T-spin
             print("檢測到正常 T-spin!")
             return "tspin"
         else:
+            # 否則為 Mini T-spin
             print("檢測到 Mini T-spin!")
             return "mini"
 
@@ -532,7 +604,7 @@ class Game:
         self, lines, is_tspin=False, tspin_type=None, is_perfect_clear=False
     ):
         """
-        計算消除行數的分數（Tetris 99 完整算分系統）
+        計算消除行數的分數（標準Tetris積分系統）
         參數：
         - lines: 消除的行數
         - is_tspin: 是否為 T-spin
@@ -544,7 +616,7 @@ class Game:
         action_text = ""
         is_difficult = False  # 是否為困難動作 (Tetris 或 T-spin)
 
-        # Perfect Clear 檢測和算分
+        # Perfect Clear 檢測和算分（最高優先級）
         if is_perfect_clear:
             self.perfect_clear_count += 1
             if lines == 1:
@@ -562,23 +634,26 @@ class Game:
                 is_difficult = True
             self.combo_count += 1
         elif is_tspin:
-            # T-spin 算分
+            # T-spin 算分（標準分數）
             if tspin_type == "mini":
                 if lines == 0:
                     base_score = 100
-                    action_text = "MINI T-SPIN"
+                    action_text = "T-SPIN MINI"
+                    # T-spin 0 lines 不算困難動作，不會觸發 back-to-back
                 elif lines == 1:
                     base_score = 200
-                    action_text = "MINI T-SPIN SINGLE"
+                    action_text = "T-SPIN MINI SINGLE"
                     is_difficult = True
                 elif lines == 2:
                     base_score = 400
-                    action_text = "MINI T-SPIN DOUBLE"
+                    action_text = "T-SPIN MINI DOUBLE"
                     is_difficult = True
+                # T-spin Mini Triple 理論上不可能
             else:  # 正常 T-spin
                 if lines == 0:
                     base_score = 400
                     action_text = "T-SPIN"
+                    # T-spin 0 lines 不算困難動作，不會觸發 back-to-back
                 elif lines == 1:
                     base_score = 800
                     action_text = "T-SPIN SINGLE"
@@ -591,7 +666,9 @@ class Game:
                     base_score = 1600
                     action_text = "T-SPIN TRIPLE"
                     is_difficult = True
-            self.combo_count += 1
+
+            if lines > 0:
+                self.combo_count += 1
         else:
             # 普通消行算分
             if lines == 1:
@@ -615,14 +692,13 @@ class Game:
                 # 沒有消行，重置 combo
                 self.combo_count = 0
 
-        # Combo 加成
-        if self.combo_count > 1:
+        # Combo 加成（根據現代Tetris標準）
+        if self.combo_count > 1 and lines > 0:
             combo_bonus = (
                 min(self.combo_count - 1, 12) * 50
-            )  # Combo 每連續一次 +50 分，最多 12 連
+            )  # 每連續一次 +50 分，最多 12 連
             base_score += combo_bonus
-            if lines > 0:
-                action_text += f" COMBO x{self.combo_count}"
+            action_text += f" COMBO x{self.combo_count}"
 
         # Back-to-back 加成
         multiplier = 1.0
@@ -633,17 +709,20 @@ class Game:
         elif is_difficult:
             self.back_to_back_count = 1
         else:
-            self.back_to_back_count = 0
+            # 非困難動作（包括T-spin 0 lines）不會中斷 back-to-back 鏈
+            if lines > 0:  # 只有有消行的非困難動作才中斷 back-to-back
+                self.back_to_back_count = 0
 
         # 更新困難動作狀態
         self.last_clear_was_difficult = is_difficult
 
         # 設定動作文字顯示
-        self.action_text = action_text
-        self.action_text_timer = 120  # 顯示 2 秒 (120 幀)
+        if action_text:  # 只有有動作時才顯示
+            self.action_text = action_text
+            self.action_text_timer = 120  # 顯示 2 秒 (120 幀)
 
-        # 計算最終分數
-        final_score = int(base_score * multiplier * self.level)
+        # 計算最終分數（先乘以等級，再應用B2B加成）
+        final_score = int(base_score * self.level * multiplier)
         return final_score
 
     def increase_level(self):
