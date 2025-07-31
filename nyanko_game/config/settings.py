@@ -14,6 +14,12 @@ SCREEN_HEIGHT = 720
 FPS = 60
 FULLSCREEN = False
 
+# 全螢幕縮放設定
+SCALE_MODE_STRETCH = "stretch"  # 拉伸填滿
+SCALE_MODE_KEEP_ASPECT = "keep_aspect"  # 保持長寬比
+SCALE_MODE_PIXEL_PERFECT = "pixel_perfect"  # 像素完美縮放
+DEFAULT_SCALE_MODE = SCALE_MODE_KEEP_ASPECT
+
 
 # 顏色定義 (RGB)
 class Colors:
@@ -107,6 +113,68 @@ class GameSettings:
     # 存檔設定
     MAX_SAVE_SLOTS = 10
     AUTO_SAVE_SLOT = 0
+
+
+# 圖片縮放設定
+class ImageScaling:
+    # 背景圖片原始解析度
+    BACKGROUND_ORIGINAL_WIDTH = 480
+    BACKGROUND_ORIGINAL_HEIGHT = 270
+
+    # 人物立繪原始解析度
+    CHARACTER_ORIGINAL_WIDTH = 170
+    CHARACTER_ORIGINAL_HEIGHT = 283
+
+    # 相對於背景的人物立繪縮放比例
+    CHARACTER_TO_BACKGROUND_RATIO = 1  # 人物立繪高度為背景高度的1.0倍
+
+    @staticmethod
+    def calculate_character_size(background_width, background_height):
+        """
+        根據背景尺寸計算人物立繪的適合尺寸
+
+        Args:
+            background_width (int): 背景寬度
+            background_height (int): 背景高度
+
+        Returns:
+            tuple: (character_width, character_height)
+        """
+        # 計算目標高度（背景高度的一定比例）
+        target_height = int(
+            background_height * ImageScaling.CHARACTER_TO_BACKGROUND_RATIO
+        )
+
+        # 保持人物立繪的原始比例
+        original_ratio = (
+            ImageScaling.CHARACTER_ORIGINAL_WIDTH
+            / ImageScaling.CHARACTER_ORIGINAL_HEIGHT
+        )
+        target_width = int(target_height * original_ratio)
+
+        return (target_width, target_height)
+
+    @staticmethod
+    def calculate_character_position(
+        screen_width, screen_height, char_width, char_height
+    ):
+        """
+        計算人物立繪在螢幕上的最佳位置
+
+        Args:
+            screen_width (int): 螢幕寬度
+            screen_height (int): 螢幕高度
+            char_width (int): 人物立繪寬度
+            char_height (int): 人物立繪高度
+
+        Returns:
+            tuple: (x, y) 人物立繪左上角座標
+        """
+        # 將人物放在螢幕右側，底部對齊
+        x = screen_width - char_width - 50  # 距離右邊緣50像素
+        y = screen_height - char_height - -20  # 距離底部20像素
+
+        return (x, y)
 
 
 # 檔案路徑設定

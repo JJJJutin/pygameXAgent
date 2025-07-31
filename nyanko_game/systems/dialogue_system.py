@@ -144,8 +144,22 @@ class DialogueSystem:
                 print(f"警告: 對話資料檔案不存在: {file_path}")
                 return False
 
-            with open(file_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
+            # 嘗試多種編碼方式
+            encodings = ["utf-8-sig", "utf-8", "utf-16"]
+            data = None
+
+            for encoding in encodings:
+                try:
+                    with open(file_path, "r", encoding=encoding) as file:
+                        data = json.load(file)
+                        print(f"成功使用 {encoding} 編碼載入對話檔案")
+                        break
+                except Exception as e:
+                    continue
+
+            if data is None:
+                print(f"無法載入對話檔案: 嘗試了所有編碼方式")
+                return False
 
             # 解析對話資料
             self.dialogue_data.clear()

@@ -1,159 +1,124 @@
-﻿{
-  "characters": {
-    "nyanko": {
-      "name": "nyanko",
-      "display_name": "nyanko"
-    }
-  },
-  "dialogues": {
+{
+  "dialogue_database": {
     "greetings": {
       "morning": [
         {
-          "id": "morning_greeting_01",
-          "speaker": "nyanko",
-          "text": "早安，主人！昨晚睡得好嗎？人家已經準備好今天的活動了！",
+          "id": "greeting_morning_01",
+          "speaker": "にゃんこ",
+          "text": "早安，主人喵～！昨晚睡得好嗎？人家已經準備好今天的活動了喵！",
           "emotion": "cheerful",
           "next_dialogue": null
-        }
-      ],
-      "afternoon": [
+        },
         {
-          "id": "afternoon_greeting_01",
-          "speaker": "nyanko",
-          "text": "主人辛苦了～要不要休息一下？人家來泡茶給你喝",
+          "id": "greeting_afternoon_01",
+          "speaker": "にゃんこ",
+          "text": "主人辛苦了～要不要休息一下喵？人家來泡茶給你喝喵～",
           "emotion": "caring",
           "next_dialogue": null
-        }
-      ],
-      "evening": [
+        },
         {
-          "id": "evening_greeting_01",
-          "speaker": "nyanko",
-          "text": "主人回來了～人家好想你！今天過得怎麼樣？",
+          "id": "greeting_evening_01",
+          "speaker": "にゃんこ",
+          "text": "主人回來了～人家好想你喵！今天過得怎麼樣喵？",
           "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "greeting_night_01",
+          "speaker": "にゃんこ",
+          "text": "主人還不睡嗎喵？人家陪你一起喵～",
+          "emotion": "sleepy",
           "next_dialogue": null
         }
       ]
     },
     "activities": {
-      "cooking_breakfast_01": {
-        "id": "cooking_breakfast_01",
-        "speaker": "nyanko",
-        "text": "主人想吃什麼早餐呢？人家可以做鬆餅、吐司還是煎蛋",
-        "emotion": "happy",
-        "choices": [
-          {
-            "text": "做可愛的貓咪鬆餅吧！",
-            "next_dialogue": "pancake_cooking_01",
-            "affection_change": 3
-          },
-          {
-            "text": "我們一起做料理吧",
-            "next_dialogue": "cooking_together_01",
-            "affection_change": 5
-          }
-        ]
-      },
-      "tv_together_01": {
-        "id": "tv_together_01",
-        "speaker": "nyanko",
-        "text": "主人要看什麼節目呢？人家想靠著主人一起看",
-        "emotion": "content",
-        "choices": [
-          {
-            "text": "一起看動畫",
-            "next_dialogue": "anime_watching_01",
-            "affection_change": 2
-          },
-          {
-            "text": "抱著你看電影",
-            "next_dialogue": "cuddling_tv_01",
-            "affection_change": 4
-          }
-        ]
-      },
-      "gaming_together_01": {
-        "id": "gaming_together_01",
-        "speaker": "nyanko",
-        "text": "主人想玩遊戲嗎？人家雖然不太會玩，但會很努力的",
-        "emotion": "determined",
-        "choices": [
-          {
-            "text": "我來教你",
-            "next_dialogue": "teaching_games_01",
-            "affection_change": 3
-          },
-          {
-            "text": "我們玩簡單的遊戲",
-            "next_dialogue": "simple_games_01",
-            "affection_change": 2
-          }
-        ]
-      }
+      "entertainment": [
+        {
+          "id": "tv_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人要看什麼節目呢喵？人家想靠著主人一起看喵～",
+          "emotion": "content",
+          "choices": [
+            {
+              "text": "一起看動畫",
+              "next_dialogue": "anime_watching_01",
+              "affection_change": 2
+            },
+            {
+              "text": "抱著你看電影",
+              "next_dialogue": "cuddling_tv_01",
+              "affection_change": 4
+            }
+          ]
+        },
+        {
+          "id": "gaming_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人想玩遊戲嗎喵？人家雖然不太會玩，但會很努力的喵～",
+          "emotion": "determined",
+          "choices": [
+            {
+              "text": "我來教你",
+              "next_dialogue": "teaching_games_01",
+              "affection_change": 3
+            },
+            {
+              "text": "我們玩簡單的遊戲",
+              "next_dialogue": "simple_games_01",
+              "affection_change": 2
+            }
+          ]
+        }
+      ]
     },
     "responses": {
-      "pancake_cooking_01": {
-        "id": "pancake_cooking_01",
-        "speaker": "nyanko",
-        "text": "太好了！人家會用心做出最可愛的貓咪鬆餅！主人要在旁邊看著",
-        "emotion": "happy",
-        "next_dialogue": null
-      },
-      "cooking_together_01": {
-        "id": "cooking_together_01",
-        "speaker": "nyanko",
-        "text": "和主人一起做料理最開心了！人家來教主人怎麼做特製鬆餅",
-        "emotion": "excited",
-        "next_dialogue": null
-      },
-      "anime_watching_01": {
-        "id": "anime_watching_01",
-        "speaker": "nyanko",
-        "text": "哇～這個動畫好有趣！主人的眼光真好",
-        "emotion": "excited",
-        "next_dialogue": null
-      },
-      "cuddling_tv_01": {
-        "id": "cuddling_tv_01",
-        "speaker": "nyanko",
-        "text": "嘿嘿～這樣靠著主人看電視好幸福（輕輕靠在主人肩膀上）",
-        "emotion": "content",
-        "next_dialogue": null
-      },
-      "teaching_games_01": {
-        "id": "teaching_games_01",
-        "speaker": "nyanko",
-        "text": "主人好厲害！人家要努力學習，不能輸給主人！",
-        "emotion": "determined",
-        "next_dialogue": null
-      },
-      "simple_games_01": {
-        "id": "simple_games_01",
-        "speaker": "nyanko",
-        "text": "這樣的遊戲人家也會玩～一起來比賽吧！",
-        "emotion": "playful",
-        "next_dialogue": null
-      },
-      "casual_chat_01": {
-        "id": "casual_chat_01",
-        "speaker": "nyanko",
-        "text": "主人想聊什麼呢？人家最喜歡和主人聊天了",
-        "emotion": "cheerful",
-        "next_dialogue": null
-      },
-      "relaxing_01": {
-        "id": "relaxing_01",
-        "speaker": "nyanko",
-        "text": "主人看起來有點累呢...人家來幫你按摩肩膀",
-        "emotion": "caring",
-        "next_dialogue": null
-      }
+      "entertainment": [
+        {
+          "id": "anime_watching_01",
+          "speaker": "にゃんこ",
+          "text": "哇～這個動畫好有趣喵！主人的眼光真好喵～",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "cuddling_tv_01",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～這樣靠著主人看電視好幸福喵～❤（輕輕靠在主人肩膀上）",
+          "emotion": "content",
+          "next_dialogue": null
+        },
+        {
+          "id": "teaching_games_01",
+          "speaker": "にゃんこ",
+          "text": "主人好厲害喵！人家要努力學習，不能輸給主人喵～",
+          "emotion": "determined",
+          "next_dialogue": null
+        },
+        {
+          "id": "simple_games_01",
+          "speaker": "にゃんこ",
+          "text": "這樣的遊戲人家也會玩喵～一起來比賽吧喵！",
+          "emotion": "playful",
+          "next_dialogue": null
+        }
+      ],
+      "general": [
+        {
+          "id": "casual_chat_01",
+          "speaker": "にゃんこ",
+          "text": "主人想聊什麼呢喵？人家最喜歡和主人聊天了喵～",
+          "emotion": "cheerful",
+          "next_dialogue": null
+        },
+        {
+          "id": "relaxing_01",
+          "speaker": "にゃんこ",
+          "text": "主人看起來有點累呢喵...人家來幫你按摩肩膀喵～",
+          "emotion": "caring",
+          "next_dialogue": null
+        }
+      ]
     }
-  },
-  "metadata": {
-    "version": "1.0",
-    "last_updated": "2024-01-15",
-    "total_dialogues": 12,
-    "description": "nyanko角色對話系統 - 戀愛模擬遊戲對話資料庫"
   }
 }

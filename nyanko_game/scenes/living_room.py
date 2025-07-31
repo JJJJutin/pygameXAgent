@@ -7,6 +7,7 @@
 import pygame
 from scenes.base_scene import BaseScene
 from config.settings import *
+from systems.image_manager import image_manager
 
 
 class LivingRoomScene(BaseScene):
@@ -25,7 +26,8 @@ class LivingRoomScene(BaseScene):
         # にゃんこ狀態
         self.nyanko_present = True
         self.nyanko_mood = "normal"
-        self.nyanko_position = (600, 400)
+        self.nyanko_position = (600, 400)  # 初始位置，會在渲染時動態更新
+        self.nyanko_rect = None  # 點擊檢測區域，會在渲染時動態更新
 
         # 新增的互動選項
         self.activity_options = [
@@ -57,6 +59,9 @@ class LivingRoomScene(BaseScene):
 
     def load_resources(self):
         """載入場景資源"""
+        # 確保圖片管理器已載入
+        image_manager.load_all_images()
+
         # 建立字體（使用中文字體）
         try:
             self.ui_font = pygame.font.Font(
@@ -71,38 +76,61 @@ class LivingRoomScene(BaseScene):
             self.ui_font = pygame.font.Font(None, FontSettings.FONT_SIZE_MEDIUM)
             self.dialogue_font = pygame.font.Font(None, FontSettings.DIALOGUE_FONT_SIZE)
 
-        # 建立背景
+        # 載入背景圖片
+        self.background_morning = image_manager.get_image("bg_livingroom_morning")
+        self.background_evening = image_manager.get_image("bg_livingroom_evening")
+
+        # 如果圖片載入失敗，創建替代背景
+        if not self.background_morning or not self.background_evening:
+            self._create_fallback_background()
+
+    def _create_fallback_background(self):
+        """創建備用背景（如果圖片載入失敗）"""
         screen_width, screen_height = self.get_screen_size()
-        self.background = pygame.Surface((screen_width, screen_height))
-        self.background.fill(Colors.LIGHT_PINK)
 
-        # 繪製簡單的客廳佈局
-        self._create_background_layout()
+        # 早上背景
+        self.background_morning = pygame.Surface((screen_width, screen_height))
+        self.background_morning.fill((255, 255, 200))  # 淡黃色
+        self._create_background_layout(self.background_morning, "morning")
 
-    def _create_background_layout(self):
+        # 晚上背景
+        self.background_evening = pygame.Surface((screen_width, screen_height))
+        self.background_evening.fill((100, 100, 200))  # 深藍色
+        self._create_background_layout(self.background_evening, "evening")
+
+    def _create_background_layout(self, surface, time_of_day):
         """建立背景佈局"""
         screen_width, screen_height = self.get_screen_size()
 
+        # 根據時間選擇顏色
+        if time_of_day == "morning":
+            floor_color = (240, 220, 180)  # 溫暖的淺褐色
+            furniture_color = (160, 120, 80)  # 明亮的木色
+        else:
+            floor_color = (180, 160, 140)  # 較暗的褐色
+            furniture_color = (120, 90, 60)  # 較暗的木色
+
         # 繪製地板
-        floor_color = (222, 184, 135)  # 淺褐色
         floor_rect = pygame.Rect(0, screen_height - 200, screen_width, 200)
-        pygame.draw.rect(self.background, floor_color, floor_rect)
+        pygame.draw.rect(surface, floor_color, floor_rect)
 
         # 繪製沙發
-        sofa_color = (139, 69, 19)  # 深褐色
         sofa_rect = pygame.Rect(100, screen_height - 300, 200, 100)
-        pygame.draw.rect(self.background, sofa_color, sofa_rect)
+        pygame.draw.rect(surface, furniture_color, sofa_rect)
 
         # 繪製桌子
-        table_color = (160, 82, 45)  # 褐色
         table_rect = pygame.Rect(400, screen_height - 250, 150, 50)
-        pygame.draw.rect(self.background, table_color, table_rect)
+        pygame.draw.rect(surface, furniture_color, table_rect)
 
-        # 繪製窗戶
-        window_color = (135, 206, 235)  # 天藍色
+        # 繪製窗戶（根據時間變化）
+        if time_of_day == "morning":
+            window_color = (255, 255, 200)  # 明亮的黃色
+        else:
+            window_color = (50, 50, 100)  # 深藍色夜空
+
         window_rect = pygame.Rect(screen_width - 250, 100, 200, 150)
-        pygame.draw.rect(self.background, window_color, window_rect)
-        pygame.draw.rect(self.background, Colors.DARK_GRAY, window_rect, 3)
+        pygame.draw.rect(surface, window_color, window_rect)
+        pygame.draw.rect(surface, Colors.DARK_GRAY, window_rect, 3)
 
     def setup_ui(self):
         """設置UI元素"""
@@ -119,13 +147,24 @@ class LivingRoomScene(BaseScene):
         if game_state:
             self.current_game_state = None
 
-        # にゃんこ角色資訊
-        self.nyanko_rect = pygame.Rect(350, 300, 100, 150)  # にゃんこ的位置區域
+        # nyanko_rect 會在 _render_nyanko() 中動態更新
 
     def render(self, screen: pygame.Surface):
         """渲染場景"""
-        # 繪製背景
-        screen.blit(self.background, (0, 0))
+        # 根據時間選擇背景
+        if self.current_time in ["morning", "afternoon"]:
+            current_bg = self.background_morning
+        else:
+            current_bg = self.background_evening
+
+        # 縮放背景到螢幕大小
+        screen_size = self.get_screen_size()
+        if current_bg:
+            scaled_bg = pygame.transform.scale(current_bg, screen_size)
+            screen.blit(scaled_bg, (0, 0))
+        else:
+            # 備用背景色
+            screen.fill(Colors.LIGHT_PINK)
 
         # 繪製にゃんこ
         if self.nyanko_present:
@@ -139,32 +178,77 @@ class LivingRoomScene(BaseScene):
 
     def _render_nyanko(self, screen: pygame.Surface):
         """繪製にゃんこ角色"""
-        # 目前使用簡單的圓形代表にゃんこ
-        nyanko_color = Colors.PINK
-        nyanko_radius = 30
+        # 根據心情選擇圖片
+        if self.nyanko_mood == "happy":
+            emotion = "happy"
+        else:
+            emotion = "normal"
 
-        # 繪製身體
-        pygame.draw.circle(screen, nyanko_color, self.nyanko_position, nyanko_radius)
+        # 獲取螢幕尺寸
+        screen_width, screen_height = self.get_screen_size()
 
-        # 繪製貓耳
-        ear_offset = 20
-        ear_size = 10
-        left_ear = (
-            self.nyanko_position[0] - ear_offset,
-            self.nyanko_position[1] - ear_offset,
+        # 計算適合的人物立繪尺寸（根據螢幕大小自動調整）
+        char_width, char_height = image_manager.get_adaptive_character_size(
+            screen_width, screen_height
         )
-        right_ear = (
-            self.nyanko_position[0] + ear_offset,
-            self.nyanko_position[1] - ear_offset,
+
+        # 獲取縮放後的角色圖片
+        nyanko_image = image_manager.get_scaled_character_image(
+            "nyanko", emotion, "default", (char_width, char_height)
         )
-        pygame.draw.circle(screen, nyanko_color, left_ear, ear_size)
-        pygame.draw.circle(screen, nyanko_color, right_ear, ear_size)
+
+        if nyanko_image:
+            # 計算最佳位置（自動根據螢幕大小調整）
+            char_x, char_y = image_manager.get_adaptive_character_position(
+                screen_width, screen_height, char_width, char_height
+            )
+
+            # 繪製角色
+            screen.blit(nyanko_image, (char_x, char_y))
+
+            # 更新 nyanko_position 以供點擊檢測使用
+            self.nyanko_position = (char_x + char_width // 2, char_y + char_height // 2)
+
+            # 更新 nyanko_rect 以供點擊檢測使用
+            self.nyanko_rect = pygame.Rect(char_x, char_y, char_width, char_height)
+        else:
+            # 備用：使用簡單圖形代表にゃんこ
+            nyanko_color = Colors.PINK
+            nyanko_radius = max(30, int(screen_width * 0.025))  # 根據螢幕大小調整
+
+            # 使用固定位置的備用顯示
+            backup_x = screen_width - 150
+            backup_y = screen_height - 150
+            self.nyanko_position = (backup_x, backup_y)
+
+            # 繪製身體
+            pygame.draw.circle(
+                screen, nyanko_color, self.nyanko_position, nyanko_radius
+            )
+
+            # 繪製貓耳
+            ear_offset = int(nyanko_radius * 0.7)
+            ear_size = int(nyanko_radius * 0.3)
+            left_ear = (backup_x - ear_offset, backup_y - ear_offset)
+            right_ear = (backup_x + ear_offset, backup_y - ear_offset)
+            pygame.draw.circle(screen, nyanko_color, left_ear, ear_size)
+            pygame.draw.circle(screen, nyanko_color, right_ear, ear_size)
+
+            # 更新點擊區域
+            self.nyanko_rect = pygame.Rect(
+                backup_x - nyanko_radius,
+                backup_y - nyanko_radius,
+                nyanko_radius * 2,
+                nyanko_radius * 2,
+            )
 
         # 繪製名字標籤
         name_text = self.ui_font.render("にゃんこ", True, Colors.DARK_GRAY)
         name_rect = name_text.get_rect()
         name_rect.centerx = self.nyanko_position[0]
-        name_rect.y = self.nyanko_position[1] + nyanko_radius + 10
+        name_rect.y = self.nyanko_position[1] + (
+            char_height // 4 if nyanko_image else 60
+        )
         screen.blit(name_text, name_rect)
 
     def _render_ui(self, screen: pygame.Surface):
@@ -231,7 +315,12 @@ class LivingRoomScene(BaseScene):
 
     def handle_event(self, event: pygame.event.Event):
         """處理事件"""
-        if event.type == pygame.KEYDOWN:
+        # 處理表情重置事件
+        if event.type == pygame.USEREVENT + 1:
+            self.nyanko_mood = "normal"
+            pygame.time.set_timer(pygame.USEREVENT + 1, 0)  # 停止計時器
+
+        elif event.type == pygame.KEYDOWN:
             if self.show_menu:
                 if event.key == pygame.K_UP:
                     self.selected_option = (self.selected_option - 1) % len(
@@ -267,6 +356,9 @@ class LivingRoomScene(BaseScene):
     def _interact_with_nyanko(self):
         """與にゃんこ互動"""
         if self.nyanko_present:
+            # 互動時讓にゃんこ變開心
+            self.nyanko_mood = "happy"
+
             print("與にゃんこ開始對話...")
             # 使用遊戲引擎的對話系統
             if (
@@ -281,6 +373,9 @@ class LivingRoomScene(BaseScene):
             else:
                 # 後備對話
                 self.game_engine.start_dialogue("greeting_morning_01")
+
+        # 一段時間後恢復正常表情
+        pygame.time.set_timer(pygame.USEREVENT + 1, 3000)  # 3秒後
 
     def _show_menu(self):
         """顯示遊戲選單"""
@@ -356,12 +451,9 @@ class LivingRoomScene(BaseScene):
 
     def _handle_mouse_click(self, mouse_pos: tuple):
         """處理滑鼠點擊"""
-        # 檢查是否點擊了にゃんこ
-        if self.nyanko_present:
-            nyanko_rect = pygame.Rect(
-                self.nyanko_position[0] - 30, self.nyanko_position[1] - 30, 60, 60
-            )
-            if nyanko_rect.collidepoint(mouse_pos):
+        # 檢查是否點擊了にゃんこ（使用動態更新的區域）
+        if self.nyanko_present and hasattr(self, "nyanko_rect"):
+            if self.nyanko_rect.collidepoint(mouse_pos):
                 self._interact_with_nyanko()
 
     def on_enter(self, transition_data=None):
