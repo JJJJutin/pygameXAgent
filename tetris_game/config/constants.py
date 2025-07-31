@@ -16,7 +16,7 @@ FPS = 60  # 遊戲幀率
 GRID_WIDTH = 10  # 遊戲區域寬度（格數）
 GRID_HEIGHT = 20  # 遊戲區域高度（格數）
 CELL_SIZE = 30  # 每個格子的像素大小
-FALL_SPEED = 500  # 方塊下落速度（毫秒）
+FALL_SPEED = 500  # 方塊下落速度（毫秒）- 基礎值，實際由等級決定
 
 # 遊戲區域位置
 GRID_X = (WINDOW_WIDTH - GRID_WIDTH * CELL_SIZE) // 2
@@ -50,7 +50,36 @@ DAS_DELAY = 10  # DAS 延遲 (16.67ms * 10 ≈ 167ms)
 ARR_RATE = 2  # ARR 重複率 (每2幀移動一次)
 
 # ============================
-# Lock Delay 設定
+# Lock Delay 設定（Tetris Guideline 標準）
 # ============================
-LOCK_DELAY_MAX = 8  # Lock delay 時間 (約 0.13秒 @ 60fps)
-MAX_LOCK_RESETS = 15  # 最大重置次數
+LOCK_DELAY_MAX = 3  # 請保持此數值為3
+MAX_LOCK_RESETS = 15  # 最大重置次數（Tetris Guideline 標準）
+
+# ============================
+# 等級系統設定（基於經典俄羅斯方塊）
+# ============================
+# 等級進階條件：每10行升1級
+LINES_PER_LEVEL = 10
+
+# 等級速度表（frames per grid cell，60fps基準）
+# 參考 Tetris 99 的激進速度曲線，適度調整
+LEVEL_SPEEDS = {
+    1: 48,  # ~0.80秒 (比 Tetris 99 稍快)
+    2: 40,  # ~0.67秒
+    3: 32,  # ~0.53秒
+    4: 25,  # ~0.42秒
+    5: 20,  # ~0.33秒
+    6: 15,  # ~0.25秒
+    7: 10,  # ~0.17秒
+    8: 8,  # ~0.13秒
+    9: 6,  # ~0.10秒
+    10: 4,  # ~0.067秒
+    11: 3,  # ~0.05秒
+    12: 2,  # ~0.033秒
+    13: 2,  # ~0.033秒
+    14: 1,  # ~0.017秒
+    15: 1,  # ~0.017秒 (最高速度)
+}
+
+# 最高等級後的預設速度（極限速度）
+MAX_LEVEL_SPEED = 1  # frames per grid cell (每幀下降一格)

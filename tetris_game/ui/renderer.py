@@ -173,6 +173,24 @@ class UIRenderer:
         lines_text = self.font.render(f"Lines: {game.lines_cleared}", True, WHITE)
         screen.blit(lines_text, (info_x, 110))
 
+        # 當前速度
+        current_speed = game.get_current_fall_speed()
+        if current_speed >= 1000:
+            speed_str = f"{current_speed/1000:.1f}s"
+        else:
+            speed_str = f"{current_speed}ms"
+        speed_text = self.font.render(f"Speed: {speed_str}", True, CYAN)
+        screen.blit(speed_text, (info_x, 140))
+
+        # 下一等級進度
+        lines_to_next = (game.level * 10) - game.lines_cleared
+        if lines_to_next > 0:
+            progress_text = self.small_font.render(f"Next: {lines_to_next} lines", True, YELLOW)
+            screen.blit(progress_text, (info_x, 170))
+        else:
+            progress_text = self.small_font.render("Max Level!", True, RED)
+            screen.blit(progress_text, (info_x, 170))
+
         # 控制說明
         controls = [
             "Controls:",

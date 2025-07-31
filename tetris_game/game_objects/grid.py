@@ -128,18 +128,24 @@ class GameGrid:
         # 如果第一行有方塊，遊戲結束
         return any(cell != BLACK for cell in self.grid[0])
 
-    def draw(self, screen):
+    def draw(self, screen, offset_x=0, offset_y=0):
         """
         繪製遊戲區域和已放置的方塊
         參數：
         - screen: pygame 螢幕物件
+        - offset_x: X 軸偏移量
+        - offset_y: Y 軸偏移量
         """
+        # 使用偏移量或默認的 GRID_X, GRID_Y
+        grid_x = GRID_X if offset_x == 0 else offset_x
+        grid_y = GRID_Y if offset_y == 0 else offset_y
+
         # 繪製已放置的方塊
         for row_idx, row in enumerate(self.grid):
             for col_idx, color in enumerate(row):
                 if color != BLACK:
-                    x = GRID_X + col_idx * CELL_SIZE
-                    y = GRID_Y + row_idx * CELL_SIZE
+                    x = grid_x + col_idx * CELL_SIZE
+                    y = grid_y + row_idx * CELL_SIZE
                     pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
                     pygame.draw.rect(screen, WHITE, (x, y, CELL_SIZE, CELL_SIZE), 1)
 
@@ -148,14 +154,14 @@ class GameGrid:
             pygame.draw.line(
                 screen,
                 GRID_COLOR,
-                (GRID_X + x * CELL_SIZE, GRID_Y),
-                (GRID_X + x * CELL_SIZE, GRID_Y + GRID_HEIGHT * CELL_SIZE),
+                (grid_x + x * CELL_SIZE, grid_y),
+                (grid_x + x * CELL_SIZE, grid_y + GRID_HEIGHT * CELL_SIZE),
             )
 
         for y in range(GRID_HEIGHT + 1):
             pygame.draw.line(
                 screen,
                 GRID_COLOR,
-                (GRID_X, GRID_Y + y * CELL_SIZE),
-                (GRID_X + GRID_WIDTH * CELL_SIZE, GRID_Y + y * CELL_SIZE),
+                (grid_x, grid_y + y * CELL_SIZE),
+                (grid_x + GRID_WIDTH * CELL_SIZE, grid_y + y * CELL_SIZE),
             )
