@@ -10,6 +10,15 @@ from tkinter import Canvas
 import random
 import threading
 import time
+
+# 嘗試導入PIL，如果失敗則使用替代方案
+try:
+    from PIL import Image, ImageTk
+
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
 from config.constants import (
     WHITE,
     BLACK,
@@ -50,15 +59,26 @@ class WindowKillManager:
         self.root.withdraw()  # 隱藏主視窗
 
         # 主遊戲視窗（使用 Pygame）
+        # 優化後的視窗大小：移除標題後減少高度，增加少量邊距
         self.main_window_size = (
-            GRID_WIDTH * CELL_SIZE + 60,
-            GRID_HEIGHT * CELL_SIZE + 100,
+            GRID_WIDTH * CELL_SIZE + 60,  # 左右各30像素邊距
+            GRID_HEIGHT * CELL_SIZE + 60,  # 上下各約30像素邊距（原來100，現在60）
         )
         self.main_screen = pygame.display.set_mode(self.main_window_size)
-        pygame.display.set_caption("Tetris - 主遊戲")
+        pygame.display.set_caption("TETRIS WINDOW")
+
+        # 設置遊戲圖示
+        try:
+            icon = pygame.image.load("assets/tetris_icon.png")
+            pygame.display.set_icon(icon)
+        except:
+            print("無法加載遊戲圖示")
 
         # 創建 Tkinter 子視窗
         self.create_tkinter_windows()
+
+        # 創建圖示（用於Tkinter視窗）
+        self.setup_tkinter_icon()
 
         # Game Over 視窗相關
         self.game_over_window = None
@@ -100,13 +120,13 @@ class WindowKillManager:
         # Hold 視窗
         self.hold_window = tk.Toplevel(self.root)
         self.hold_window.title("Hold")
-        self.hold_window.geometry("200x150+100+100")
+        self.hold_window.geometry("180x140+100+100")
         self.hold_window.configure(bg="black")
         self.hold_window.attributes("-topmost", True)
         self.hold_canvas = Canvas(
             self.hold_window,
-            width=180,
-            height=130,
+            width=160,
+            height=120,
             bg="black",
             highlightbackground="yellow",
             highlightthickness=3,
@@ -116,13 +136,13 @@ class WindowKillManager:
         # Next 視窗
         self.next_window = tk.Toplevel(self.root)
         self.next_window.title("Next")
-        self.next_window.geometry("200x200+800+100")
+        self.next_window.geometry("180x140+800+100")
         self.next_window.configure(bg="black")
         self.next_window.attributes("-topmost", True)
         self.next_canvas = Canvas(
             self.next_window,
-            width=180,
-            height=180,
+            width=160,
+            height=120,
             bg="black",
             highlightbackground="green",
             highlightthickness=3,
@@ -148,13 +168,13 @@ class WindowKillManager:
         # 操作說明視窗
         self.controls_window = tk.Toplevel(self.root)
         self.controls_window.title("Controls")
-        self.controls_window.geometry("350x500+100+400")
+        self.controls_window.geometry("280x220+100+400")
         self.controls_window.configure(bg="black")
         self.controls_window.attributes("-topmost", True)
         self.controls_canvas = Canvas(
             self.controls_window,
-            width=330,
-            height=480,
+            width=260,
+            height=200,
             bg="black",
             highlightbackground="orange",
             highlightthickness=3,
@@ -164,13 +184,49 @@ class WindowKillManager:
         # 繪製靜態內容
         self.draw_static_controls()
 
+    def setup_tkinter_icon(self):
+        """為所有Tkinter視窗設置圖示"""
+        if PIL_AVAILABLE:
+            try:
+                # 使用PIL加載圖片並轉換為PhotoImage
+                pil_image = Image.open("assets/tetris_icon.png")
+                # 調整圖片大小為適合的圖示尺寸
+                pil_image = pil_image.resize((32, 32), Image.Resampling.LANCZOS)
+                self.tk_icon = ImageTk.PhotoImage(pil_image)
+
+                # 為所有視窗設置圖示
+                self.hold_window.iconphoto(False, self.tk_icon)
+                self.next_window.iconphoto(False, self.tk_icon)
+                self.info_window.iconphoto(False, self.tk_icon)
+                self.controls_window.iconphoto(False, self.tk_icon)
+
+                print("✅ Tkinter視窗圖示設置成功")
+                return
+            except Exception as e:
+                print(f"⚠️ 使用PIL設置圖示失敗: {e}")
+
+        # 如果PIL不可用，創建一個簡單的文字圖示
+        try:
+            # 創建一個簡單的文字圖示
+            print("🔄 PIL不可用，跳過Tkinter視窗圖示設置")
+            # 注意：Tkinter對圖示格式要求較嚴格，PNG需要PIL支持
+            # 我們可以在視窗標題中添加表情符號作為替代方案
+            self.hold_window.title("🎮 Hold")
+            self.next_window.title("🎯 Next")
+            self.info_window.title("📊 Info")
+            self.controls_window.title("🎮 Controls")
+            print("✅ 已為視窗標題添加表情符號作為替代")
+
+        except Exception as e:
+            print(f"⚠️ 設置替代圖示方案失敗: {e}")
+
     def draw_static_controls(self):
         """繪製操作說明（靜態內容）"""
         self.controls_canvas.delete("all")
 
         # 標題
         self.controls_canvas.create_text(
-            165, 20, text="操作說明", fill="white", font=("Arial", 16, "bold")
+            130, 20, text="操作說明", fill="white", font=("Arial", 16, "bold")
         )
 
         # 操作說明內容
@@ -183,18 +239,6 @@ class WindowKillManager:
             "Space: 硬降",
             "C / Shift: Hold 功能",
             "R: 重新開始",
-            "",
-            "特色功能:",
-            "• SRS 旋轉系統",
-            "• 7-bag 隨機器",
-            "• 幽靈方塊預覽",
-            "• Hold 功能",
-            "• T-Spin 檢測",
-            "• Perfect Clear 檢測",
-            "• Combo 系統",
-            "• Back-to-Back 獎勵",
-            "• 震動反饋效果",
-            "• WindowKill 風格多視窗",
         ]
 
         y_offset = 50
@@ -205,7 +249,7 @@ class WindowKillManager:
             elif control.startswith("•"):
                 color = "cyan"
                 font_size = 10
-            elif control in ["基本操作:", "特色功能:"]:
+            elif control == "基本操作:":
                 color = "white"
                 font_size = 12
             else:
@@ -282,11 +326,11 @@ class WindowKillManager:
                 # 移動對應的視窗
                 if window_name == "hold_window":
                     self.hold_window.geometry(
-                        f"200x150+{int(anim['current_x'])}+{int(anim['current_y'])}"
+                        f"180x140+{int(anim['current_x'])}+{int(anim['current_y'])}"
                     )
                 elif window_name == "next_window":
                     self.next_window.geometry(
-                        f"200x200+{int(anim['current_x'])}+{int(anim['current_y'])}"
+                        f"180x140+{int(anim['current_x'])}+{int(anim['current_y'])}"
                     )
                 elif window_name == "info_window":
                     self.info_window.geometry(
@@ -294,22 +338,17 @@ class WindowKillManager:
                     )
                 elif window_name == "controls_window":
                     self.controls_window.geometry(
-                        f"350x500+{int(anim['current_x'])}+{int(anim['current_y'])}"
+                        f"280x220+{int(anim['current_x'])}+{int(anim['current_y'])}"
                     )
 
     def draw_main_game(self, game):
         """繪製主遊戲視窗（Pygame）"""
         # 應用震動偏移
         offset_x = 30 + self.shake_offset_x
-        offset_y = 50 + self.shake_offset_y
+        offset_y = 20 + self.shake_offset_y  # 減少上邊距，因為移除了標題
 
         # 清除背景
         self.main_screen.fill(BLACK)
-
-        # 繪製標題
-        title_text = self.font.render("TETRIS", True, WHITE)
-        title_rect = title_text.get_rect(center=(self.main_window_size[0] // 2, 25))
-        self.main_screen.blit(title_text, title_rect)
 
         # 繪製遊戲網格
         game.grid.draw(self.main_screen, offset_x, offset_y)
@@ -389,14 +428,14 @@ class WindowKillManager:
 
         # 標題
         self.hold_canvas.create_text(
-            90, 15, text="HOLD", fill="white", font=("Arial", 14, "bold")
+            80, 15, text="HOLD", fill="white", font=("Arial", 14, "bold")
         )
 
         if game.hold_tetromino:
             # 繪製 Hold 方塊
             shape = game.hold_tetromino.shapes[0]
-            start_x = 90 - (len(shape[0]) * 10)
-            start_y = 40
+            start_x = 80 - (len(shape[0]) * 10)
+            start_y = 35
 
             for row_idx, row in enumerate(shape):
                 for col_idx, cell in enumerate(row):
@@ -422,14 +461,14 @@ class WindowKillManager:
 
         # 標題
         self.next_canvas.create_text(
-            90, 15, text="NEXT", fill="white", font=("Arial", 14, "bold")
+            80, 15, text="NEXT", fill="white", font=("Arial", 14, "bold")
         )
 
         if game.next_tetromino:
             # 繪製 Next 方塊
             shape = game.next_tetromino.shapes[0]
-            start_x = 90 - (len(shape[0]) * 10)
-            start_y = 40
+            start_x = 80 - (len(shape[0]) * 10)
+            start_y = 35
 
             for row_idx, row in enumerate(shape):
                 for col_idx, cell in enumerate(row):
@@ -444,19 +483,6 @@ class WindowKillManager:
                         self.next_canvas.create_rectangle(
                             x, y, x + 18, y + 18, fill=hex_color, outline="white"
                         )
-
-        # 顯示 bag 資訊
-        if hasattr(game, "piece_bag"):
-            self.next_canvas.create_text(
-                90, 120, text="Bag:", fill="lightgray", font=("Arial", 10)
-            )
-            self.next_canvas.create_text(
-                90,
-                135,
-                text=f"剩餘: {len(game.piece_bag)}",
-                fill="lightgray",
-                font=("Arial", 10),
-            )
 
     def update_info_window(self, game):
         """更新資訊視窗"""
@@ -626,7 +652,7 @@ class WindowKillManager:
 
         # 創建 Game Over 視窗
         self.game_over_window = tk.Toplevel(self.root)
-        self.game_over_window.title("Game Over")
+        self.game_over_window.title("💀 Game Over")
         self.game_over_window.geometry("320x200")
         self.game_over_window.configure(bg="black")
         self.game_over_window.resizable(False, False)
@@ -642,6 +668,13 @@ class WindowKillManager:
 
         # 設置視窗關閉事件
         self.game_over_window.protocol("WM_DELETE_WINDOW", self.on_game_over_close)
+
+        # 為Game Over視窗設置圖示
+        try:
+            if hasattr(self, "tk_icon"):
+                self.game_over_window.iconphoto(False, self.tk_icon)
+        except:
+            pass
 
         # 創建 Canvas（符合其他視窗的風格）
         self.game_over_canvas = Canvas(
