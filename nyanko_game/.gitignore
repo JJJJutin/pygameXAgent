@@ -217,3 +217,18 @@ dist/
 # Game specific generated content
 generated/
 cache/
+
+# 遊戲存檔和用戶資料
+data/saves/
+data/user_settings.json
+data/progress.json
+
+# 開發工具產生的檔案
+clean_project.py
+
+# 測試和報告檔案
+*_test.py
+test_*.py
+*_REPORT.md
+*_SUMMARY.md
+*_GUIDE.md

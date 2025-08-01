@@ -1,34 +1,198 @@
 {
   "dialogue_database": {
     "greetings": {
+      "early_morning": [
+        {
+          "id": "greeting_early_morning_01",
+          "speaker": "にゃんこ",
+          "text": "主人早安喵～人家剛剛起床，還有點迷迷糊糊的喵...(揉眼睛)",
+          "emotion": "sleepy",
+          "choices": [
+            {
+              "text": "再睡一會兒吧",
+              "next_dialogue": "early_morning_sleep_more",
+              "affection_change": 2
+            },
+            {
+              "text": "一起起床準備早餐",
+              "next_dialogue": "early_morning_breakfast",
+              "affection_change": 3
+            }
+          ]
+        }
+      ],
       "morning": [
         {
           "id": "greeting_morning_01",
           "speaker": "にゃんこ",
           "text": "早安，主人喵～！昨晚睡得好嗎？人家已經準備好今天的活動了喵！",
           "emotion": "cheerful",
-          "next_dialogue": null
+          "choices": [
+            {
+              "text": "睡得很好，謝謝你",
+              "next_dialogue": "morning_good_sleep",
+              "affection_change": 2
+            },
+            {
+              "text": "還想睡一會兒",
+              "next_dialogue": "morning_want_sleep",
+              "affection_change": 1
+            },
+            {
+              "text": "今天想做什麼呢？",
+              "next_dialogue": "morning_plans",
+              "affection_change": 3
+            }
+          ]
         },
+        {
+          "id": "greeting_morning_02",
+          "speaker": "にゃんこ",
+          "text": "主人起床了喵～！人家已經準備好早餐了，想要什麼口味的喵？",
+          "emotion": "caring",
+          "conditions": {
+            "affection_min": 20
+          },
+          "choices": [
+            {
+              "text": "你做什麼我都喜歡",
+              "next_dialogue": "morning_breakfast_love",
+              "affection_change": 4
+            },
+            {
+              "text": "我想要日式早餐",
+              "next_dialogue": "morning_japanese_breakfast",
+              "affection_change": 2
+            }
+          ]
+        }
+      ],
+      "afternoon": [
         {
           "id": "greeting_afternoon_01",
           "speaker": "にゃんこ",
           "text": "主人辛苦了～要不要休息一下喵？人家來泡茶給你喝喵～",
           "emotion": "caring",
-          "next_dialogue": null
+          "choices": [
+            {
+              "text": "謝謝，我很想喝茶",
+              "next_dialogue": "afternoon_tea_time",
+              "affection_change": 3
+            },
+            {
+              "text": "我還有事要忙",
+              "next_dialogue": "afternoon_still_busy",
+              "affection_change": 0
+            }
+          ]
         },
+        {
+          "id": "greeting_afternoon_02",
+          "speaker": "にゃんこ",
+          "text": "午安喵～外面陽光好好喵！要不要到陽台曬曬太陽喵？",
+          "emotion": "cheerful",
+          "conditions": {
+            "weather": "sunny"
+          },
+          "choices": [
+            {
+              "text": "好啊，一起去曬太陽",
+              "next_dialogue": "afternoon_sunbathing",
+              "affection_change": 4
+            },
+            {
+              "text": "我比較想在室內",
+              "next_dialogue": "afternoon_indoor",
+              "affection_change": 1
+            }
+          ]
+        }
+      ],
+      "evening": [
         {
           "id": "greeting_evening_01",
           "speaker": "にゃんこ",
           "text": "主人回來了～人家好想你喵！今天過得怎麼樣喵？",
           "emotion": "excited",
-          "next_dialogue": null
-        },
+          "choices": [
+            {
+              "text": "今天很累，但見到你就開心了",
+              "next_dialogue": "evening_tired_happy",
+              "affection_change": 5
+            },
+            {
+              "text": "今天過得不錯",
+              "next_dialogue": "evening_good_day",
+              "affection_change": 2
+            },
+            {
+              "text": "我想聽聽你今天做了什麼",
+              "next_dialogue": "evening_nyanko_day",
+              "affection_change": 3
+            }
+          ]
+        }
+      ],
+      "night": [
         {
           "id": "greeting_night_01",
           "speaker": "にゃんこ",
           "text": "主人還不睡嗎喵？人家陪你一起喵～",
           "emotion": "sleepy",
-          "next_dialogue": null
+          "choices": [
+            {
+              "text": "一起睡吧",
+              "next_dialogue": "night_sleep_together",
+              "affection_change": 4
+            },
+            {
+              "text": "再陪我一會兒",
+              "next_dialogue": "night_stay_up",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "greeting_night_02",
+          "speaker": "にゃんこ",
+          "text": "夜深了喵～人家想要和主人一起看星星喵...",
+          "emotion": "romantic",
+          "conditions": {
+            "affection_min": 40,
+            "weather": "clear"
+          },
+          "choices": [
+            {
+              "text": "好啊，我們一起看星星",
+              "next_dialogue": "night_stargazing",
+              "affection_change": 6
+            },
+            {
+              "text": "今晚太累了",
+              "next_dialogue": "night_too_tired",
+              "affection_change": -1
+            }
+          ]
+        }
+      ],
+      "late_night": [
+        {
+          "id": "greeting_late_night_01",
+          "speaker": "にゃんこ",
+          "text": "主人這麼晚還不睡喵？人家擔心你的身體喵...",
+          "emotion": "worried",
+          "choices": [
+            {
+              "text": "謝謝你的關心",
+              "next_dialogue": "late_night_concern",
+              "affection_change": 3
+            },
+            {
+              "text": "再工作一會兒",
+              "next_dialogue": "late_night_work",
+              "affection_change": 0
+            }
+          ]
         }
       ]
     },
@@ -49,6 +213,11 @@
               "text": "抱著你看電影",
               "next_dialogue": "cuddling_tv_01",
               "affection_change": 4
+            },
+            {
+              "text": "看戀愛電影",
+              "next_dialogue": "romantic_movie_01",
+              "affection_change": 5
             }
           ]
         },
@@ -67,12 +236,271 @@
               "text": "我們玩簡單的遊戲",
               "next_dialogue": "simple_games_01",
               "affection_change": 2
+            },
+            {
+              "text": "玩雙人合作遊戲",
+              "next_dialogue": "coop_games_01",
+              "affection_change": 4
+            }
+          ]
+        }
+      ],
+      "daily_life": [
+        {
+          "id": "cooking_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人想和人家一起做料理嗎喵？人家會努力做出美味的料理喵～",
+          "emotion": "excited",
+          "choices": [
+            {
+              "text": "好啊，我們一起做",
+              "next_dialogue": "cooking_together_accept",
+              "affection_change": 4
+            },
+            {
+              "text": "我想看你做料理",
+              "next_dialogue": "cooking_watch",
+              "affection_change": 2
+            },
+            {
+              "text": "今天不想做料理",
+              "next_dialogue": "cooking_decline",
+              "affection_change": -1
+            }
+          ]
+        },
+        {
+          "id": "cleaning_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人，房間有點亂了喵...要不要和人家一起打掃喵？",
+          "emotion": "hopeful",
+          "choices": [
+            {
+              "text": "好，我們一起打掃",
+              "next_dialogue": "cleaning_together_accept",
+              "affection_change": 3
+            },
+            {
+              "text": "你自己打掃就好",
+              "next_dialogue": "cleaning_alone",
+              "affection_change": -2
+            }
+          ]
+        },
+        {
+          "id": "shopping_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人，食材快用完了喵～要不要一起去買東西喵？",
+          "emotion": "practical",
+          "choices": [
+            {
+              "text": "好啊，一起去逛街",
+              "next_dialogue": "shopping_together_accept",
+              "affection_change": 4
+            },
+            {
+              "text": "你去就好了",
+              "next_dialogue": "shopping_alone",
+              "affection_change": 0
+            }
+          ]
+        }
+      ],
+      "intimate": [
+        {
+          "id": "cuddling_request_01",
+          "speaker": "にゃんこ",
+          "text": "主人...人家想要和你抱抱喵～(害羞地搖尾巴)",
+          "emotion": "shy",
+          "conditions": {
+            "affection_min": 30
+          },
+          "choices": [
+            {
+              "text": "過來，我抱抱你",
+              "next_dialogue": "cuddling_accept",
+              "affection_change": 6
+            },
+            {
+              "text": "現在不太方便",
+              "next_dialogue": "cuddling_decline",
+              "affection_change": -2
+            }
+          ]
+        },
+        {
+          "id": "bathing_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人...人家想和你一起洗澡喵～❤(臉紅)",
+          "emotion": "embarrassed",
+          "conditions": {
+            "affection_min": 60,
+            "location": "bathroom"
+          },
+          "choices": [
+            {
+              "text": "好啊，一起洗",
+              "next_dialogue": "bathing_together_accept",
+              "affection_change": 8
+            },
+            {
+              "text": "我們分開洗比較好",
+              "next_dialogue": "bathing_separate",
+              "affection_change": -1
             }
           ]
         }
       ]
     },
     "responses": {
+      "morning_responses": [
+        {
+          "id": "early_morning_sleep_more",
+          "speaker": "にゃんこ",
+          "text": "嗯...那人家也再睡一會兒喵～(窩進主人懷裡)",
+          "emotion": "sleepy",
+          "next_dialogue": null
+        },
+        {
+          "id": "early_morning_breakfast",
+          "speaker": "にゃんこ",
+          "text": "好的喵～人家馬上去準備早餐！今天想吃什麼呢喵？",
+          "emotion": "energetic",
+          "next_dialogue": null
+        },
+        {
+          "id": "morning_good_sleep",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～人家也睡得很好！夢到和主人一起玩呢喵～❤",
+          "emotion": "cheerful",
+          "next_dialogue": null
+        },
+        {
+          "id": "morning_want_sleep",
+          "speaker": "にゃんこ",
+          "text": "那人家陪主人再睡一會兒喵～(輕輕躺在旁邊)",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "morning_plans",
+          "speaker": "にゃんこ",
+          "text": "嗯...人家想和主人一起做很多事情喵～！比如一起做早餐、打掃房間，或者只是靜靜地待在一起喵～❤",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "morning_breakfast_love",
+          "speaker": "にゃんこ",
+          "text": "主人真是的...這樣說會讓人家很開心的喵～❤人家會用心做出最美味的早餐喵！",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "morning_japanese_breakfast",
+          "speaker": "にゃんこ",
+          "text": "日式早餐喵～人家最拿手了！味噌湯、烤魚、還有人家親手做的玉子燒喵～",
+          "emotion": "proud",
+          "next_dialogue": null
+        }
+      ],
+      "afternoon_responses": [
+        {
+          "id": "afternoon_tea_time",
+          "speaker": "にゃんこ",
+          "text": "好的喵～人家馬上去泡茶！主人喜歡什麼口味的呢？人家的手藝可是很好的喵～❤",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "afternoon_still_busy",
+          "speaker": "にゃんこ",
+          "text": "嗯...主人辛苦了喵～那人家就在旁邊安靜地陪著你喵！",
+          "emotion": "understanding",
+          "next_dialogue": null
+        },
+        {
+          "id": "afternoon_sunbathing",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～！人家最喜歡和主人一起曬太陽了！暖暖的陽光讓人想要撒嬌喵～❤",
+          "emotion": "content",
+          "next_dialogue": null
+        },
+        {
+          "id": "afternoon_indoor",
+          "speaker": "にゃんこ",
+          "text": "那我們在客廳裡喝茶聊天吧喵～人家也喜歡安靜的午後時光喵！",
+          "emotion": "peaceful",
+          "next_dialogue": null
+        }
+      ],
+      "evening_responses": [
+        {
+          "id": "evening_tired_happy",
+          "speaker": "にゃんこ",
+          "text": "主人...❤聽到你這麼說人家好開心喵～！讓人家幫你按摩一下肩膀吧喵！",
+          "emotion": "loving",
+          "next_dialogue": null
+        },
+        {
+          "id": "evening_good_day",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～人家也過得很開心！一直在期待主人回來呢喵～",
+          "emotion": "cheerful",
+          "next_dialogue": null
+        },
+        {
+          "id": "evening_nyanko_day",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～人家今天打掃了房間、準備了晚餐，還練習了新的料理喵～都是為了主人呢！",
+          "emotion": "proud",
+          "next_dialogue": null
+        }
+      ],
+      "night_responses": [
+        {
+          "id": "night_sleep_together",
+          "speaker": "にゃんこ",
+          "text": "嗯...人家想和主人一起睡喵～❤(害羞地鑽進被窩)",
+          "emotion": "shy",
+          "next_dialogue": null
+        },
+        {
+          "id": "night_stay_up",
+          "speaker": "にゃんこ",
+          "text": "好的喵～人家陪主人到什麼時候都可以喵！要不要一起看夜景呢？",
+          "emotion": "devoted",
+          "next_dialogue": null
+        },
+        {
+          "id": "night_stargazing",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？！人家最喜歡看星星了！和主人一起看會更美呢喵～❤",
+          "emotion": "romantic",
+          "next_dialogue": null
+        },
+        {
+          "id": "night_too_tired",
+          "speaker": "にゃんこ",
+          "text": "嗯...主人累了的話就好好休息吧喵～人家會在旁邊守著你的喵！",
+          "emotion": "understanding",
+          "next_dialogue": null
+        },
+        {
+          "id": "late_night_concern",
+          "speaker": "にゃんこ",
+          "text": "人家會一直關心主人的喵～身體健康最重要了喵！早點睡覺吧？",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "late_night_work",
+          "speaker": "にゃんこ",
+          "text": "嗯...那人家泡咖啡給主人喝喵～但是不要太晚睡喔？",
+          "emotion": "worried",
+          "next_dialogue": null
+        }
+      ],
       "entertainment": [
         {
           "id": "anime_watching_01",
@@ -89,6 +517,13 @@
           "next_dialogue": null
         },
         {
+          "id": "romantic_movie_01",
+          "speaker": "にゃんこ",
+          "text": "戀愛電影喵～？人家會害羞的喵...❤但是和主人一起看會很開心喵！",
+          "emotion": "shy",
+          "next_dialogue": null
+        },
+        {
           "id": "teaching_games_01",
           "speaker": "にゃんこ",
           "text": "主人好厲害喵！人家要努力學習，不能輸給主人喵～",
@@ -100,6 +535,94 @@
           "speaker": "にゃんこ",
           "text": "這樣的遊戲人家也會玩喵～一起來比賽吧喵！",
           "emotion": "playful",
+          "next_dialogue": null
+        },
+        {
+          "id": "coop_games_01",
+          "speaker": "にゃんこ",
+          "text": "合作遊戲喵！人家會努力配合主人的喵～我們一定能通關！",
+          "emotion": "teamwork",
+          "next_dialogue": null
+        }
+      ],
+      "daily_life": [
+        {
+          "id": "cooking_together_accept",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～！人家和主人一起做料理，一定會很美味的喵～❤",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "cooking_watch",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～那主人就看著人家展現廚藝吧喵！人家會做出讓主人驚艷的料理喵～",
+          "emotion": "confident",
+          "next_dialogue": null
+        },
+        {
+          "id": "cooking_decline",
+          "speaker": "にゃんこ",
+          "text": "嗯...那人家就簡單準備一下吧喵～（有點失望但理解）",
+          "emotion": "disappointed",
+          "next_dialogue": null
+        },
+        {
+          "id": "cleaning_together_accept",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～！和主人一起打掃會很快完成的喵！而且會很有趣喵～",
+          "emotion": "energetic",
+          "next_dialogue": null
+        },
+        {
+          "id": "cleaning_alone",
+          "speaker": "にゃんこ",
+          "text": "嗯...人家知道了喵～會好好打掃的喵！（有點寂寞但努力打起精神）",
+          "emotion": "lonely",
+          "next_dialogue": null
+        },
+        {
+          "id": "shopping_together_accept",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？！人家最喜歡和主人一起出門了喵～❤要買很多好吃的回來喵！",
+          "emotion": "thrilled",
+          "next_dialogue": null
+        },
+        {
+          "id": "shopping_alone",
+          "speaker": "にゃんこ",
+          "text": "嗯...那人家會快去快回的喵～有什麼特別想吃的嗎喵？",
+          "emotion": "practical",
+          "next_dialogue": null
+        }
+      ],
+      "intimate": [
+        {
+          "id": "cuddling_accept",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤（輕輕走向主人，窩進懷裡）主人的懷抱好溫暖喵～人家最喜歡這樣了喵～❤",
+          "emotion": "blissful",
+          "next_dialogue": null
+        },
+        {
+          "id": "cuddling_decline",
+          "speaker": "にゃんこ",
+          "text": "嗯...人家知道了喵～（有點失落）那等主人有空的時候再抱抱吧喵...",
+          "emotion": "sad",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathing_together_accept",
+          "speaker": "にゃんこ",
+          "text": "真、真的可以嗎喵～？❤❤（臉紅得像蘋果）那...那人家去準備熱水喵～❤",
+          "emotion": "extremely_shy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathing_separate",
+          "speaker": "にゃんこ",
+          "text": "嗯...人家明白喵～（雖然有點遺憾但理解）那人家先洗好了告訴主人喵！",
+          "emotion": "understanding",
           "next_dialogue": null
         }
       ],
@@ -116,6 +639,1091 @@
           "speaker": "にゃんこ",
           "text": "主人看起來有點累呢喵...人家來幫你按摩肩膀喵～",
           "emotion": "caring",
+          "next_dialogue": null
+        }
+      ]
+    },
+    "special_events": {
+      "first_meeting": [
+        {
+          "id": "first_meeting_01",
+          "speaker": "にゃんこ",
+          "text": "你好，主人喵～！人家是にゃんこ，從今天開始就是你的專屬貓娘女僕了喵！請多多指教喵～❤",
+          "emotion": "cheerful",
+          "conditions": {
+            "first_meeting": true
+          },
+          "choices": [
+            {
+              "text": "請多指教，にゃんこ",
+              "next_dialogue": "first_meeting_welcome",
+              "affection_change": 5
+            },
+            {
+              "text": "你看起來很可愛呢",
+              "next_dialogue": "first_meeting_compliment",
+              "affection_change": 8
+            },
+            {
+              "text": "我們會相處得很好的",
+              "next_dialogue": "first_meeting_future",
+              "affection_change": 6
+            }
+          ]
+        }
+      ],
+      "birthday": [
+        {
+          "id": "nyanko_birthday_01",
+          "speaker": "にゃんこ",
+          "text": "主人...今天是人家的生日喵～❤人家好開心能和主人一起度過喵！",
+          "emotion": "birthday_happy",
+          "conditions": {
+            "event": "nyanko_birthday"
+          },
+          "choices": [
+            {
+              "text": "生日快樂！我準備了驚喜",
+              "next_dialogue": "birthday_surprise",
+              "affection_change": 10
+            },
+            {
+              "text": "我們一起慶祝吧",
+              "next_dialogue": "birthday_celebrate",
+              "affection_change": 6
+            }
+          ]
+        }
+      ],
+      "valentines": [
+        {
+          "id": "valentines_day_01",
+          "speaker": "にゃんこ",
+          "text": "主人...今天是情人節喵～❤人家做了巧克力給你喵...雖然不知道好不好吃...(害羞)",
+          "emotion": "valentine_shy",
+          "conditions": {
+            "event": "valentines_day"
+          },
+          "choices": [
+            {
+              "text": "謝謝你，一定很美味",
+              "next_dialogue": "valentine_accept",
+              "affection_change": 8
+            },
+            {
+              "text": "我也有禮物給你",
+              "next_dialogue": "valentine_exchange",
+              "affection_change": 12
+            }
+          ]
+        }
+      ],
+      "christmas": [
+        {
+          "id": "christmas_eve_01",
+          "speaker": "にゃんこ",
+          "text": "主人～聖誕快樂喵～！人家把房間裝飾得很漂亮喔喵！",
+          "emotion": "christmas_excited",
+          "conditions": {
+            "event": "christmas"
+          },
+          "choices": [
+            {
+              "text": "房間很漂亮，你辛苦了",
+              "next_dialogue": "christmas_praise",
+              "affection_change": 5
+            },
+            {
+              "text": "聖誕禮物交換吧",
+              "next_dialogue": "christmas_gift",
+              "affection_change": 8
+            }
+          ]
+        }
+      ],
+      "weather_events": [
+        {
+          "id": "rainy_day_01",
+          "speaker": "にゃんこ",
+          "text": "外面下雨了喵～人家有點怕打雷喵...可以抱抱人家嗎喵？",
+          "emotion": "scared",
+          "conditions": {
+            "weather": "rainy"
+          },
+          "choices": [
+            {
+              "text": "過來，我保護你",
+              "next_dialogue": "rainy_comfort",
+              "affection_change": 6
+            },
+            {
+              "text": "我們一起聽雨聲",
+              "next_dialogue": "rainy_peaceful",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "snow_day_01",
+          "speaker": "にゃんこ",
+          "text": "哇～下雪了喵～！人家想和主人一起堆雪人喵～❤",
+          "emotion": "excited",
+          "conditions": {
+            "weather": "snowy"
+          },
+          "choices": [
+            {
+              "text": "好啊，一起出去玩雪",
+              "next_dialogue": "snow_play",
+              "affection_change": 7
+            },
+            {
+              "text": "我們在窗邊看雪景",
+              "next_dialogue": "snow_watch",
+              "affection_change": 4
+            }
+          ]
+        }
+      ],
+      "milestone_events": [
+        {
+          "id": "first_week_01",
+          "speaker": "にゃんこ",
+          "text": "主人～和你一起生活已經一週了喵～人家每天都很開心喵～❤",
+          "emotion": "grateful",
+          "conditions": {
+            "day_count": 7,
+            "affection_min": 20
+          },
+          "choices": [
+            {
+              "text": "我也很開心",
+              "next_dialogue": "first_week_happy",
+              "affection_change": 4
+            },
+            {
+              "text": "希望能一直這樣下去",
+              "next_dialogue": "first_week_future",
+              "affection_change": 6
+            }
+          ]
+        },
+        {
+          "id": "confession_preparation",
+          "speaker": "にゃんこ",
+          "text": "主人...人家有話想對你說喵...（緊張地搖尾巴）",
+          "emotion": "nervous",
+          "conditions": {
+            "affection_min": 80,
+            "day_count_min": 14
+          },
+          "choices": [
+            {
+              "text": "什麼話？我在聽",
+              "next_dialogue": "confession_listen",
+              "affection_change": 0
+            },
+            {
+              "text": "我也有話想說",
+              "next_dialogue": "confession_mutual",
+              "affection_change": 5
+            }
+          ]
+        }
+      ]
+    },
+    "daily_events": {
+      "routine_events": [
+        {
+          "id": "breakfast_together_01",
+          "speaker": "にゃんこ",
+          "text": "主人，早餐準備好了喵～！人家做了主人最愛吃的煎蛋和吐司喵❤",
+          "emotion": "cheerful",
+          "choices": [
+            {
+              "text": "看起來很美味",
+              "next_dialogue": "breakfast_praise",
+              "affection_change": 2
+            },
+            {
+              "text": "一起吃早餐吧",
+              "next_dialogue": "breakfast_together",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "surprise_gift_01",
+          "speaker": "にゃんこ",
+          "text": "主人～人家有個小驚喜要給你喵❤(害羞地拿出包裝精美的小盒子)",
+          "emotion": "excited",
+          "choices": [
+            {
+              "text": "這是什麼？",
+              "next_dialogue": "gift_reveal",
+              "affection_change": 3
+            },
+            {
+              "text": "你真貼心",
+              "next_dialogue": "gift_appreciation",
+              "affection_change": 5
+            }
+          ]
+        },
+        {
+          "id": "cooking_accident_01",
+          "speaker": "にゃんこ",
+          "text": "嗚喵...主人，人家不小心把鹽巴當作糖放進去了喵...(委屈的表情)",
+          "emotion": "sad",
+          "choices": [
+            {
+              "text": "沒關係，重新做就好",
+              "next_dialogue": "accident_comfort",
+              "affection_change": 3
+            },
+            {
+              "text": "我來幫你一起做",
+              "next_dialogue": "accident_help",
+              "affection_change": 4
+            },
+            {
+              "text": "怎麼這麼不小心",
+              "next_dialogue": "accident_scold",
+              "affection_change": -2
+            }
+          ]
+        }
+      ],
+      "special_moments": [
+        {
+          "id": "rainy_day_cozy",
+          "speaker": "にゃんこ",
+          "text": "外面下雨了喵～這樣的天氣最適合窩在家裡了喵❤主人要不要和人家一起看書？",
+          "emotion": "cozy",
+          "conditions": {
+            "weather": "rainy"
+          },
+          "choices": [
+            {
+              "text": "好啊，一起看書",
+              "next_dialogue": "reading_together",
+              "affection_change": 4
+            },
+            {
+              "text": "聽雨聲很舒服",
+              "next_dialogue": "enjoying_rain",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "sunny_day_outdoor",
+          "speaker": "にゃんこ",
+          "text": "今天天氣真好喵～！人家想和主人一起到陽台曬太陽喵❤",
+          "emotion": "energetic",
+          "conditions": {
+            "weather": "sunny"
+          },
+          "choices": [
+            {
+              "text": "去陽台享受陽光",
+              "next_dialogue": "balcony_sunbathing",
+              "affection_change": 4
+            },
+            {
+              "text": "我們出去散步吧",
+              "next_dialogue": "outdoor_walk",
+              "affection_change": 5
+            }
+          ]
+        }
+      ],
+      "milestone_events": [
+        {
+          "id": "one_month_together",
+          "speaker": "にゃんこ",
+          "text": "主人...和你在一起已經一個月了喵❤人家每天都很開心喵～感謝主人陪伴人家喵！",
+          "emotion": "grateful",
+          "conditions": {
+            "day_count": 30,
+            "affection_min": 50
+          },
+          "choices": [
+            {
+              "text": "我也很開心",
+              "next_dialogue": "mutual_happiness",
+              "affection_change": 6
+            },
+            {
+              "text": "希望能一直這樣",
+              "next_dialogue": "eternal_wish",
+              "affection_change": 8
+            }
+          ]
+        }
+      ]
+    },
+    "daily_responses": {
+      "breakfast_responses": [
+        {
+          "id": "breakfast_praise",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？❤人家好開心喵！為了主人，人家每天都會努力做美味的早餐喵！",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "breakfast_together",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家最喜歡和主人一起吃早餐了喵❤這樣的時光真幸福喵～",
+          "emotion": "blissful",
+          "next_dialogue": null
+        }
+      ],
+      "gift_responses": [
+        {
+          "id": "gift_reveal",
+          "speaker": "にゃんこ",
+          "text": "是人家親手做的小餅乾喵～！人家想著主人的笑容一邊做的喵❤希望主人會喜歡喵～",
+          "emotion": "shy_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "gift_appreciation",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～❤因為人家想要讓主人開心喵～看到主人笑容是人家最大的幸福喵！",
+          "emotion": "devoted",
+          "next_dialogue": null
+        }
+      ],
+      "accident_responses": [
+        {
+          "id": "accident_comfort",
+          "speaker": "にゃんこ",
+          "text": "主人真溫柔喵～❤(感動地看著主人)人家會更小心的喵！謝謝主人不生氣喵～",
+          "emotion": "touched",
+          "next_dialogue": null
+        },
+        {
+          "id": "accident_help",
+          "speaker": "にゃんこ",
+          "text": "主人願意幫人家嗎喵～？❤太好了喵！一起做料理會更有趣的喵～",
+          "emotion": "grateful",
+          "next_dialogue": null
+        },
+        {
+          "id": "accident_scold",
+          "speaker": "にゃんこ",
+          "text": "對不起喵...人家會更小心的喵...(低著頭，尾巴垂下來)",
+          "emotion": "apologetic",
+          "next_dialogue": null
+        }
+      ],
+      "weather_responses": [
+        {
+          "id": "reading_together",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～❤(靠在主人身邊)雨天和主人一起看書是最幸福的時光喵～",
+          "emotion": "cozy_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "enjoying_rain",
+          "speaker": "にゃんこ",
+          "text": "嗯！雨滴答滴答的聲音很好聽喵～和主人一起聽雨聲感覺很浪漫喵❤",
+          "emotion": "romantic",
+          "next_dialogue": null
+        },
+        {
+          "id": "balcony_sunbathing",
+          "speaker": "にゃんこ",
+          "text": "啊～陽光好溫暖喵～❤(懶洋洋地伸展)和主人一起曬太陽讓人家想打瞌睡喵～",
+          "emotion": "relaxed",
+          "next_dialogue": null
+        },
+        {
+          "id": "outdoor_walk",
+          "speaker": "にゃんこ",
+          "text": "散步喵～？❤人家最喜歡和主人一起出門了喵！我們去哪裡呢喵？",
+          "emotion": "excited",
+          "next_dialogue": null
+        }
+      ],
+      "milestone_responses": [
+        {
+          "id": "mutual_happiness",
+          "speaker": "にゃんこ",
+          "text": "聽到主人這麼說人家好開心喵～❤我們一起創造了這麼多美好的回憶喵！",
+          "emotion": "joyful",
+          "next_dialogue": null
+        },
+        {
+          "id": "eternal_wish",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家也希望能永遠和主人在一起喵～❤❤人家愛主人喵～",
+          "emotion": "love_declaration",
+          "next_dialogue": null
+        }
+      ]
+    },
+    "scene_interactions": {
+      "bedroom": [
+        {
+          "id": "bedroom_chat_morning_01",
+          "speaker": "にゃんこ",
+          "text": "主人早安喵～人家剛剛整理好床鋪了喵！今天要做什麼呢？",
+          "emotion": "energetic",
+          "choices": [
+            {
+              "text": "你真勤勞呢",
+              "next_dialogue": "bedroom_praise_response",
+              "affection_change": 3
+            },
+            {
+              "text": "一起整理房間吧",
+              "next_dialogue": "bedroom_clean_together",
+              "affection_change": 4
+            }
+          ]
+        },
+        {
+          "id": "bedroom_chat_evening_01",
+          "speaker": "にゃんこ",
+          "text": "主人辛苦了一天喵～要不要在床上休息一下？人家來幫你按摩肩膀喵～",
+          "emotion": "caring",
+          "choices": [
+            {
+              "text": "好啊，麻煩你了",
+              "next_dialogue": "bedroom_massage",
+              "affection_change": 5
+            },
+            {
+              "text": "我們一起休息吧",
+              "next_dialogue": "bedroom_rest_together",
+              "affection_change": 6
+            }
+          ]
+        },
+        {
+          "id": "bedroom_chat_night_01",
+          "speaker": "にゃんこ",
+          "text": "主人...人家想和你一起睡喵～❤(害羞地看著床)",
+          "emotion": "shy",
+          "conditions": {
+            "affection_min": 40
+          },
+          "choices": [
+            {
+              "text": "好啊，一起睡吧",
+              "next_dialogue": "bedroom_sleep_together",
+              "affection_change": 8
+            },
+            {
+              "text": "我們聊聊天再睡",
+              "next_dialogue": "bedroom_bedtime_chat",
+              "affection_change": 4
+            }
+          ]
+        },
+        {
+          "id": "bedroom_intimate_chat_01",
+          "speaker": "にゃんこ",
+          "text": "主人...人家的心跳好快喵～❤在這個私密的房間裡，人家想要更靠近主人喵～❤",
+          "emotion": "romantic",
+          "conditions": {
+            "affection_min": 60
+          },
+          "choices": [
+            {
+              "text": "過來，抱抱你",
+              "next_dialogue": "bedroom_embrace",
+              "affection_change": 10
+            },
+            {
+              "text": "我也想要靠近你",
+              "next_dialogue": "bedroom_close_moment",
+              "affection_change": 12
+            }
+          ]
+        },
+        {
+          "id": "bedroom_make_bed_01",
+          "speaker": "にゃんこ",
+          "text": "主人也要幫忙整理床鋪嗎喵？人家好開心喵～一起做家事會很有趣的喵！",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_wardrobe_01",
+          "speaker": "にゃんこ",
+          "text": "主人想看人家的衣服嗎喵？人家有很多可愛的衣服喔喵～❤要不要幫人家選一套？",
+          "emotion": "excited",
+          "choices": [
+            {
+              "text": "幫你選衣服",
+              "next_dialogue": "bedroom_choose_clothes",
+              "affection_change": 4
+            },
+            {
+              "text": "你穿什麼都好看",
+              "next_dialogue": "bedroom_compliment_clothes",
+              "affection_change": 6
+            }
+          ]
+        },
+        {
+          "id": "bedroom_dresser_01",
+          "speaker": "にゃんこ",
+          "text": "主人想看人家梳頭髮嗎喵？人家的頭髮很柔順喔喵～",
+          "emotion": "gentle",
+          "choices": [
+            {
+              "text": "我來幫你梳頭髮",
+              "next_dialogue": "bedroom_brush_hair",
+              "affection_change": 7
+            },
+            {
+              "text": "你的頭髮真漂亮",
+              "next_dialogue": "bedroom_hair_compliment",
+              "affection_change": 4
+            }
+          ]
+        },
+        {
+          "id": "bedroom_sleep_01",
+          "speaker": "にゃんこ",
+          "text": "主人累了嗎喵？人家陪你一起睡喵～❤(輕輕拉著主人的手)",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_nap_01",
+          "speaker": "にゃんこ",
+          "text": "主人想午睡嗎喵？人家也有點累了喵～要不要一起躺一會兒？",
+          "emotion": "sleepy",
+          "choices": [
+            {
+              "text": "一起午睡吧",
+              "next_dialogue": "bedroom_nap_together",
+              "affection_change": 5
+            },
+            {
+              "text": "我不睡，看著你睡",
+              "next_dialogue": "bedroom_watch_sleep",
+              "affection_change": 3
+            }
+          ]
+        }
+      ],
+      "bathroom": [
+        {
+          "id": "bathroom_chat_01",
+          "speaker": "にゃんこ",
+          "text": "主人也來浴室了喵～人家正在整理洗漱用品喵！",
+          "emotion": "cheerful",
+          "choices": [
+            {
+              "text": "你真細心呢",
+              "next_dialogue": "bathroom_praise",
+              "affection_change": 2
+            },
+            {
+              "text": "需要幫忙嗎？",
+              "next_dialogue": "bathroom_help",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "bathroom_wash_hands_01",
+          "speaker": "にゃんこ",
+          "text": "主人要洗手嗎喵？人家來幫你準備香皂喵～",
+          "emotion": "helpful",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_mirror_01",
+          "speaker": "にゃんこ",
+          "text": "主人在照鏡子嗎喵？人家覺得主人很帥氣喵～❤(害羞地偷看)",
+          "emotion": "shy",
+          "choices": [
+            {
+              "text": "你也很可愛",
+              "next_dialogue": "bathroom_cute_response",
+              "affection_change": 4
+            },
+            {
+              "text": "一起照鏡子吧",
+              "next_dialogue": "bathroom_mirror_together",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "bathroom_bath_01",
+          "speaker": "にゃんこ",
+          "text": "主人要洗澡了嗎喵？人家去準備毛巾喵～水溫要調多少度呢？",
+          "emotion": "caring",
+          "choices": [
+            {
+              "text": "溫水就好",
+              "next_dialogue": "bathroom_warm_water",
+              "affection_change": 2
+            },
+            {
+              "text": "你來幫我調溫度",
+              "next_dialogue": "bathroom_help_temperature",
+              "affection_change": 4
+            }
+          ]
+        }
+      ],
+      "kitchen": [
+        {
+          "id": "kitchen_chat_01",
+          "speaker": "にゃんこ",
+          "text": "主人喜歡在廚房和人家聊天嗎喵？人家最喜歡一邊做料理一邊聊天了喵～",
+          "emotion": "cheerful",
+          "choices": [
+            {
+              "text": "我喜歡看你做料理",
+              "next_dialogue": "kitchen_watch_cooking",
+              "affection_change": 3
+            },
+            {
+              "text": "聊聊今天的菜單",
+              "next_dialogue": "kitchen_menu_talk",
+              "affection_change": 2
+            }
+          ]
+        },
+        {
+          "id": "cooking_dinner_01",
+          "speaker": "にゃんこ",
+          "text": "主人想吃什麼晚餐呢喵？人家可以做很多菜喔喵～今天想吃中式還是日式料理？",
+          "emotion": "excited",
+          "choices": [
+            {
+              "text": "做你最拿手的菜",
+              "next_dialogue": "kitchen_specialty",
+              "affection_change": 4
+            },
+            {
+              "text": "我們一起決定",
+              "next_dialogue": "kitchen_decide_together",
+              "affection_change": 5
+            },
+            {
+              "text": "做簡單的就好",
+              "next_dialogue": "kitchen_simple_meal",
+              "affection_change": 1
+            }
+          ]
+        },
+        {
+          "id": "new_recipe_learning_01",
+          "speaker": "にゃんこ",
+          "text": "主人想學新的料理嗎喵？人家最近在網路上看到很多有趣的食譜喵～",
+          "emotion": "enthusiastic",
+          "choices": [
+            {
+              "text": "教我做甜點",
+              "next_dialogue": "kitchen_dessert_lesson",
+              "affection_change": 6
+            },
+            {
+              "text": "學做日本料理",
+              "next_dialogue": "kitchen_japanese_lesson",
+              "affection_change": 4
+            },
+            {
+              "text": "做簡單的家常菜",
+              "next_dialogue": "kitchen_homestyle_lesson",
+              "affection_change": 3
+            }
+          ]
+        },
+        {
+          "id": "kitchen_washing_01",
+          "speaker": "にゃんこ",
+          "text": "主人要幫人家洗碗嗎喵？太好了喵～一起洗碗會很快完成的喵！",
+          "emotion": "grateful",
+          "choices": [
+            {
+              "text": "我來洗，你來擦",
+              "next_dialogue": "kitchen_wash_dry",
+              "affection_change": 4
+            },
+            {
+              "text": "我們比賽誰洗得快",
+              "next_dialogue": "kitchen_washing_race",
+              "affection_change": 5
+            }
+          ]
+        },
+        {
+          "id": "kitchen_fridge_01",
+          "speaker": "にゃんこ",
+          "text": "主人想看看冰箱裡有什麼嗎喵？人家昨天去買了很多新鮮的食材喵～",
+          "emotion": "proud",
+          "choices": [
+            {
+              "text": "看看有什麼好吃的",
+              "next_dialogue": "kitchen_fridge_contents",
+              "affection_change": 2
+            },
+            {
+              "text": "你買菜的眼光真好",
+              "next_dialogue": "kitchen_shopping_praise",
+              "affection_change": 4
+            }
+          ]
+        }
+      ]
+    },
+    "scene_responses": {
+      "kitchen_responses": [
+        {
+          "id": "kitchen_watch_cooking",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？❤那人家要更用心地做料理了喵！主人看著人家做菜會讓人家很開心的喵～",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_menu_talk",
+          "speaker": "にゃんこ",
+          "text": "今天人家想做蛋包飯和味噌湯喵～還有主人最喜歡的炸雞塊喵！聽起來怎麼樣？",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_specialty",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～人家最拿手的是親子丼喵～❤人家會用愛心做出最美味的親子丼給主人吃喵！",
+          "emotion": "confident",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_decide_together",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～！和主人一起決定菜單人家最開心了喵～這樣做出來的料理一定會更美味喵❤",
+          "emotion": "joyful",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_simple_meal",
+          "speaker": "にゃんこ",
+          "text": "嗯！簡單的料理也很棒喵～人家會做出營養又美味的簡單料理給主人喵！",
+          "emotion": "understanding",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_dessert_lesson",
+          "speaker": "にゃんこ",
+          "text": "甜點喵～？❤人家最喜歡做甜點了喵！我們來做布丁或者蛋糕吧喵～主人想做哪一個？",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_japanese_lesson",
+          "speaker": "にゃんこ",
+          "text": "日本料理喵～人家會教主人做最正宗的日式料理喵！從基本的高湯開始學喵～",
+          "emotion": "teaching",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_homestyle_lesson",
+          "speaker": "にゃんこ",
+          "text": "家常菜最溫暖了喵～人家會教主人做出充滿愛的家常料理喵！",
+          "emotion": "warm",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_wash_dry",
+          "speaker": "にゃんこ",
+          "text": "好的喵～這樣分工很棒喵！主人洗得很乾淨，人家來擦乾喵～配合得真好喵❤",
+          "emotion": "teamwork",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_washing_race",
+          "speaker": "にゃんこ",
+          "text": "比賽喵？人家不會輸的喵～！(認真地開始洗碗)咦～主人洗得好快喵！人家要更努力才行喵～",
+          "emotion": "competitive",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_fridge_contents",
+          "speaker": "にゃんこ",
+          "text": "人家買了新鮮的蔬菜、肉類，還有主人最愛吃的水果喵～全部都是精心挑選的喔喵❤",
+          "emotion": "proud",
+          "next_dialogue": null
+        },
+        {
+          "id": "kitchen_shopping_praise",
+          "speaker": "にゃんこ",
+          "text": "謝謝主人的誇獎喵～❤人家每次買菜都會想著主人喜歡吃什麼喵～能被主人誇獎真開心喵！",
+          "emotion": "grateful",
+          "next_dialogue": null
+        }
+      ],
+      "bedroom_responses": [
+        {
+          "id": "bedroom_praise_response",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～人家最喜歡被主人誇獎了喵～❤人家會更努力做好家事的喵！",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_clean_together",
+          "speaker": "にゃんこ",
+          "text": "太好了喵～！和主人一起整理房間人家最開心了喵！分工合作會很快完成的喵～",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_massage",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家的按摩技術很好的喵～❤(輕輕按摩主人的肩膀)這樣會舒服一點嗎喵？",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_rest_together",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤(輕輕躺在主人旁邊)這樣一起休息好幸福喵～人家想永遠待在主人身邊喵～",
+          "emotion": "blissful",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_sleep_together",
+          "speaker": "にゃんこ",
+          "text": "真的可以嗎喵～？❤❤人家好開心喵～(鑽進被窩)主人的體溫好溫暖喵～",
+          "emotion": "extremely_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_bedtime_chat",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家最喜歡睡前和主人聊天了喵～今天發生了什麼有趣的事情嗎喵？",
+          "emotion": "content",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_embrace",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤❤(被主人抱在懷裡)人家的心跳得好快喵～主人也能感受到嗎喵～？❤",
+          "emotion": "romantic",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_close_moment",
+          "speaker": "にゃんこ",
+          "text": "主人...❤人家也想要更靠近你喵～❤(慢慢靠近)這樣的時刻人家想要永遠記住喵～❤",
+          "emotion": "intimate",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_choose_clothes",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？❤主人要幫人家選衣服！人家會穿主人選的任何衣服喵～❤",
+          "emotion": "excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_compliment_clothes",
+          "speaker": "にゃんこ",
+          "text": "主人...❤這樣說會讓人家很害羞的喵～但是人家很開心喵～❤",
+          "emotion": "shy_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_brush_hair",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤主人的手好溫柔喵～(享受地閉上眼睛)被主人梳頭髮好舒服喵～❤",
+          "emotion": "peaceful",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_hair_compliment",
+          "speaker": "にゃんこ",
+          "text": "謝謝主人的誇獎喵～❤人家每天都有好好保養頭髮的喵！",
+          "emotion": "proud",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_nap_together",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤和主人一起午睡最幸福了喵～(輕輕靠在主人身邊)人家可能會作美夢喵～",
+          "emotion": "sleepy_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bedroom_watch_sleep",
+          "speaker": "にゃんこ",
+          "text": "主人真溫柔喵～那人家安心地睡一會兒喵～❤記得叫醒人家喔喵～",
+          "emotion": "trusting",
+          "next_dialogue": null
+        }
+      ],
+      "bathroom_responses": [
+        {
+          "id": "bathroom_praise",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～人家想讓浴室保持乾淨整潔喵～這樣主人用起來會更舒服喵！",
+          "emotion": "proud",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_help",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵？主人願意幫忙人家好開心喵～一起整理會很快完成的喵！",
+          "emotion": "grateful",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_cute_response",
+          "speaker": "にゃんこ",
+          "text": "主人...❤這樣誇獎人家會害羞的喵～(臉紅紅地看著鏡子)但是人家很開心喵～❤",
+          "emotion": "shy_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_mirror_together",
+          "speaker": "にゃんこ",
+          "text": "嗯！一起照鏡子喵～我們站在一起的樣子很般配呢喵～❤",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_warm_water",
+          "speaker": "にゃんこ",
+          "text": "好的喵～人家馬上去調溫水！主人慢慢洗，不要著涼了喵～",
+          "emotion": "caring",
+          "next_dialogue": null
+        },
+        {
+          "id": "bathroom_help_temperature",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家最知道主人喜歡的水溫了喵～❤(小心翼翼地調節水溫)這樣剛剛好嗎喵？",
+          "emotion": "attentive",
+          "next_dialogue": null
+        }
+      ]
+    },
+    "event_responses": {
+      "birthday_responses": [
+        {
+          "id": "birthday_surprise",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？！❤❤人家好期待喵～主人準備了什麼驚喜呢喵？",
+          "emotion": "extremely_excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "birthday_celebrate",
+          "speaker": "にゃんこ",
+          "text": "嗯～！❤人家想和主人一起切蛋糕、吹蠟燭喵～這是人家最棒的生日了喵～",
+          "emotion": "joyful",
+          "next_dialogue": null
+        }
+      ],
+      "valentine_responses": [
+        {
+          "id": "valentine_accept",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？❤人家好開心喵～雖然是第一次做，但人家很用心的喵！",
+          "emotion": "valentine_happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "valentine_exchange",
+          "speaker": "にゃんこ",
+          "text": "誒～？！主人也有禮物給人家嗎喵～？❤❤人家...人家好感動喵～❤",
+          "emotion": "valentine_touched",
+          "next_dialogue": null
+        }
+      ],
+      "weather_responses": [
+        {
+          "id": "rainy_comfort",
+          "speaker": "にゃんこ",
+          "text": "嗯...❤（窩進主人懷裡）主人的懷抱好溫暖喵～人家不害怕了喵～",
+          "emotion": "comforted",
+          "next_dialogue": null
+        },
+        {
+          "id": "rainy_peaceful",
+          "speaker": "にゃんこ",
+          "text": "雨聲真的很好聽喵～和主人一起聽會更棒喵～這樣的午後好安靜好舒服喵～",
+          "emotion": "peaceful",
+          "next_dialogue": null
+        },
+        {
+          "id": "snow_play",
+          "speaker": "にゃんこ",
+          "text": "真的嗎喵～？！人家要穿厚厚的衣服喵！我們堆一個大大的雪人喵～❤",
+          "emotion": "winter_excited",
+          "next_dialogue": null
+        },
+        {
+          "id": "snow_watch",
+          "speaker": "にゃんこ",
+          "text": "雪花好漂亮喵～一片一片慢慢飄下來...和主人一起看雪景感覺好浪漫喵～❤",
+          "emotion": "romantic",
+          "next_dialogue": null
+        }
+      ],
+      "milestone_responses": [
+        {
+          "id": "first_week_happy",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～人家也是喵～每天醒來第一個看到主人就覺得很幸福喵～❤",
+          "emotion": "blissful",
+          "next_dialogue": null
+        },
+        {
+          "id": "first_week_future",
+          "speaker": "にゃんこ",
+          "text": "嗯！人家也希望能一直和主人在一起喵～❤永遠永遠都不分開喵～",
+          "emotion": "devoted",
+          "next_dialogue": null
+        },
+        {
+          "id": "confession_listen",
+          "speaker": "にゃんこ",
+          "text": "人家...人家喜歡主人喵～❤不是女僕對主人的那種喜歡，是...是戀人之間的那種喜歡喵～❤❤",
+          "emotion": "confession",
+          "next_dialogue": null
+        },
+        {
+          "id": "first_meeting_welcome",
+          "speaker": "にゃんこ",
+          "text": "嘿嘿～主人真溫柔喵～人家會努力成為最棒的女僕的喵！",
+          "emotion": "happy",
+          "next_dialogue": null
+        },
+        {
+          "id": "first_meeting_compliment",
+          "speaker": "にゃんこ",
+          "text": "主人這樣說人家會害羞的喵～❤不過...人家很開心喵～",
+          "emotion": "shy",
+          "next_dialogue": null
+        },
+        {
+          "id": "first_meeting_future",
+          "speaker": "にゃんこ",
+          "text": "人家也這樣覺得喵～我們一定會變成最好的拍檔的喵！❤",
+          "emotion": "cheerful",
+          "next_dialogue": null
+        },
+        {
+          "id": "confession_mutual",
+          "speaker": "にゃんこ",
+          "text": "主人也有話要說嗎喵？那...那人家先說喵～人家...人家愛上主人了喵～❤❤❤",
+          "emotion": "love_confession",
           "next_dialogue": null
         }
       ]

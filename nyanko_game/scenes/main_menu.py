@@ -77,8 +77,42 @@ class MainMenuScene(BaseScene):
         if self.paused:
             return
 
-        # 這裡可以添加動畫效果或其他更新邏輯
-        pass
+        # 即時滑鼠懸停檢測
+        if self.is_mouse_in_game_area():
+            mouse_pos = self.get_mouse_pos()
+            self._update_mouse_hover(mouse_pos)
+
+    def _update_mouse_hover(self, mouse_pos: tuple):
+        """更新滑鼠懸停狀態"""
+        if mouse_pos[0] < 0 or mouse_pos[1] < 0:
+            return  # 滑鼠不在遊戲區域內
+
+        screen_width, screen_height = self.get_screen_size()
+        menu_start_y = screen_height // 2
+        button_height = UISettings.BUTTON_HEIGHT
+        button_spacing = button_height + UISettings.BUTTON_MARGIN
+
+        previous_selected = self.selected_index
+
+        for i, item in enumerate(self.menu_items):
+            if not item["enabled"]:
+                continue
+
+            button_rect = pygame.Rect(
+                screen_width // 2 - UISettings.BUTTON_WIDTH // 2,
+                menu_start_y + i * button_spacing,
+                UISettings.BUTTON_WIDTH,
+                button_height,
+            )
+
+            if button_rect.collidepoint(mouse_pos):
+                self.selected_index = i
+                break
+
+        # 如果選擇項目改變了，可以播放懸停音效
+        if previous_selected != self.selected_index:
+            # 這裡可以添加懸停音效
+            pass
 
     def render(self, screen: pygame.Surface):
         """渲染場景"""
@@ -174,11 +208,13 @@ class MainMenuScene(BaseScene):
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # 左鍵點擊
-                mouse_pos = pygame.mouse.get_pos()
+                # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
+                mouse_pos = getattr(event, "pos", self.get_mouse_pos())
                 self._handle_mouse_click(mouse_pos)
 
         elif event.type == pygame.MOUSEMOTION:
-            mouse_pos = pygame.mouse.get_pos()
+            # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
+            mouse_pos = getattr(event, "pos", self.get_mouse_pos())
             self._handle_mouse_hover(mouse_pos)
 
     def _navigate_menu(self, direction: int):

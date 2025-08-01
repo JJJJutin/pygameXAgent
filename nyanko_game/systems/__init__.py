@@ -6,20 +6,18 @@
 
 from .dialogue_system import DialogueSystem, DialogueNode
 from .affection_system import AffectionSystem, RelationshipLevel
-from .time_system import TimeSystem, TimePeriod, GameTime
 from .event_system import EventSystem, EventType, GameEvent
+from .daily_event_system import DailyEventSystem
 
 __all__ = [
     "DialogueSystem",
     "DialogueNode",
     "AffectionSystem",
     "RelationshipLevel",
-    "TimeSystem",
-    "TimePeriod",
-    "GameTime",
     "EventSystem",
     "EventType",
     "GameEvent",
+    "DailyEventSystem",
 ]
 
 # 模組初始化完成

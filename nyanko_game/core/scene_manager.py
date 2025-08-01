@@ -22,6 +22,7 @@ class SceneManager:
         self.game_engine = game_engine
         self.scenes: Dict[str, BaseScene] = {}
         self.current_scene: Optional[BaseScene] = None
+        self.current_scene_name: Optional[str] = None
         self.next_scene: Optional[str] = None
         self.transitioning = False
         self.transition_data: Dict[str, Any] = {}
@@ -33,14 +34,16 @@ class SceneManager:
         """註冊所有可用的場景"""
         # 導入所有場景類別
         from scenes.main_menu import MainMenuScene
-        from scenes.living_room import LivingRoomScene
+        from scenes.enhanced_living_room import (
+            EnhancedLivingRoomScene,
+        )  # 使用增強版客廳
         from scenes.kitchen import KitchenScene
         from scenes.bedroom import BedroomScene
         from scenes.bathroom import BathroomScene
 
         # 註冊場景
         self.register_scene("main_menu", MainMenuScene)
-        self.register_scene("living_room", LivingRoomScene)
+        self.register_scene("living_room", EnhancedLivingRoomScene)  # 使用增強版
         self.register_scene("kitchen", KitchenScene)
         self.register_scene("bedroom", BedroomScene)
         self.register_scene("bathroom", BathroomScene)
@@ -76,6 +79,20 @@ class SceneManager:
         if self.current_scene:
             self.current_scene.on_exit()
 
+        # 追蹤場景訪問
+        if (
+            hasattr(self.game_engine, "progress_tracker")
+            and self.game_engine.progress_tracker
+        ):
+            self.game_engine.progress_tracker.track_scene_visit(scene_name)
+
+        # 播放場景切換音效
+        if (
+            hasattr(self.game_engine, "audio_manager")
+            and self.game_engine.audio_manager
+        ):
+            self.game_engine.audio_manager.play_sfx("scene_transition", 0.6)
+
         print(f"準備切換到場景: {scene_name}")
 
     def update(self, dt: float, game_state: dict = None):
@@ -98,6 +115,7 @@ class SceneManager:
         """執行場景切換"""
         if self.next_scene in self.scenes:
             self.current_scene = self.scenes[self.next_scene]
+            self.current_scene_name = self.next_scene  # 儲存場景名稱
             self.current_scene.on_enter(self.transition_data)
             print(f"已切換到場景: {self.next_scene}")
 
@@ -131,12 +149,7 @@ class SceneManager:
         Returns:
             str: 當前場景名稱
         """
-        if self.current_scene:
-            # 從場景類別名稱推斷場景名稱
-            for name, scene in self.scenes.items():
-                if scene == self.current_scene:
-                    return name
-        return "unknown"
+        return self.current_scene_name or "unknown"
 
     def pause_current_scene(self):
         """暫停當前場景"""

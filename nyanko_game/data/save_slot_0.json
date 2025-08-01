@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-08-01T11:34:17.001979",
+  "game_state": {
+    "nyanko_affection": 0,
+    "current_time_period": "",
+    "current_weekday": "",
+    "flags": {},
+    "items": {}
+  },
+  "current_scene": "bathroom",
+  "affection_data": {
+    "character_affection": {
+      "nyanko": 20
+    },
+    "character_relationships": {
+      "nyanko": "acquaintance"
+    },
+    "triggered_events": [
+      "first_meeting"
+    ],
+    "daily_interactions": {
+      "nyanko": 20
+    },
+    "special_flags": {
+      "morning_greeting_unlocked": true
+    }
+  },
+  "time_data": {
+    "day": 1,
+    "hour": 9,
+    "minute": 0
+  }
+}

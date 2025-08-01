@@ -95,6 +95,8 @@ class DialogueSystem:
         self.is_active = False
         self.waiting_for_input = False
         self.auto_mode = False
+        self.last_dialogue_end_time = 0  # 上次對話結束時間
+        self.dialogue_cooldown = 0.5  # 對話冷卻時間（秒）
 
         # 回調函數
         self.on_dialogue_end: Optional[Callable] = None
@@ -106,13 +108,22 @@ class DialogueSystem:
         """初始化UI元素"""
         screen_width, screen_height = self.game_engine.get_screen_size()
 
-        # 對話框位置
+        # 對話框位置 - 為選擇按鈕預留空間
         box_height = UISettings.DIALOGUE_BOX_HEIGHT
         box_margin = UISettings.DIALOGUE_BOX_MARGIN
 
+        # 計算選擇按鈕需要的最大空間（3個按鈕 + 間距）
+        max_choice_buttons = 3
+        button_height = 35
+        button_spacing = 8
+        choice_area_height = max_choice_buttons * (button_height + button_spacing) + 20
+
+        # 調整對話框位置，確保選擇按鈕不會超出螢幕
+        dialogue_y = screen_height - box_height - choice_area_height - box_margin
+
         self.dialogue_box_rect = pygame.Rect(
             box_margin,
-            screen_height - box_height - box_margin,
+            dialogue_y,
             screen_width - 2 * box_margin,
             box_height,
         )
@@ -190,6 +201,19 @@ class DialogueSystem:
         Returns:
             bool: 是否成功開始對話
         """
+        # 檢查是否已有對話在進行中
+        if self.is_active:
+            print(f"警告: 對話系統忙碌中，無法開始新對話: {dialogue_id}")
+            return False
+
+        # 檢查冷卻時間
+        import time
+
+        current_time = time.time()
+        if current_time - self.last_dialogue_end_time < self.dialogue_cooldown:
+            print(f"警告: 對話冷卻中，請稍候再試: {dialogue_id}")
+            return False
+
         if dialogue_id not in self.dialogue_data:
             print(f"警告: 找不到對話ID: {dialogue_id}")
             return False
@@ -386,9 +410,43 @@ class DialogueSystem:
         # 繼續到下一個對話
         next_dialogue_id = choice.get("next_dialogue")
         if next_dialogue_id:
-            self.start_dialogue(next_dialogue_id, game_state)
+            # 先重置當前對話狀態，然後開始新對話
+            self._transition_to_next_dialogue(next_dialogue_id, game_state)
         else:
             self.end_dialogue()
+
+    def _transition_to_next_dialogue(
+        self, next_dialogue_id: str, game_state: Dict[str, Any]
+    ):
+        """
+        過渡到下一個對話
+
+        Args:
+            next_dialogue_id: 下一個對話ID
+            game_state: 遊戲狀態
+        """
+        # 檢查對話ID是否存在
+        if next_dialogue_id not in self.dialogue_data:
+            print(f"警告: 找不到對話ID: {next_dialogue_id}")
+            self.end_dialogue()
+            return
+
+        # 重置當前對話狀態但保持系統活躍
+        self.current_dialogue = self.dialogue_data[next_dialogue_id]
+        self.full_text = self.current_dialogue.text
+        self.displayed_text = ""
+        self.text_progress = 0
+        self.text_complete = False
+        self.waiting_for_input = False
+        self.selected_choice = 0
+        self.choice_buttons = []
+
+        # 記錄到歷史
+        self.dialogue_history.append(next_dialogue_id)
+
+        print(f"繼續對話: {next_dialogue_id}")
+        print(f"說話者: {self.current_dialogue.speaker}")
+        print(f"內容: {self.current_dialogue.text}")
 
     def _apply_choice_effects(self, choice: Dict[str, Any], game_state: Dict[str, Any]):
         """應用選擇效果"""
@@ -417,6 +475,12 @@ class DialogueSystem:
     def end_dialogue(self):
         """結束對話"""
         print("對話結束")
+
+        # 記錄對話結束時間
+        import time
+
+        self.last_dialogue_end_time = time.time()
+
         self.is_active = False
         self.current_dialogue = None
         self.displayed_text = ""

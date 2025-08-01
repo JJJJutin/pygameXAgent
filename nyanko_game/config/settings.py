@@ -4,21 +4,17 @@
 包含所有遊戲相關的設定值和常數定義
 """
 
+import pygame
+
 # 遊戲基本設定
 GAME_TITLE = "にゃんこと一緒 ～貓娘女僕的同居日常～"
 GAME_VERSION = "1.0.0"
 
 # 視窗設定
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1280  # 視窗寬度
+SCREEN_HEIGHT = 720  # 視窗高度
 FPS = 60
-FULLSCREEN = False
-
-# 全螢幕縮放設定
-SCALE_MODE_STRETCH = "stretch"  # 拉伸填滿
-SCALE_MODE_KEEP_ASPECT = "keep_aspect"  # 保持長寬比
-SCALE_MODE_PIXEL_PERFECT = "pixel_perfect"  # 像素完美縮放
-DEFAULT_SCALE_MODE = SCALE_MODE_KEEP_ASPECT
+FULLSCREEN_MODE = False  # 預設視窗模式
 
 
 # 顏色定義 (RGB)
@@ -32,6 +28,12 @@ class Colors:
     GRAY = (128, 128, 128)
     LIGHT_GRAY = (211, 211, 211)
     DARK_GRAY = (64, 64, 64)
+    YELLOW = (255, 255, 0)
+    LIGHT_YELLOW = (255, 255, 224)
+    GREEN = (0, 255, 0)
+    LIGHT_GREEN = (144, 238, 144)
+    RED = (255, 0, 0)
+    LIGHT_RED = (255, 182, 193)
 
     # 主題色彩
     PRIMARY_COLOR = PINK
@@ -128,6 +130,10 @@ class ImageScaling:
     # 相對於背景的人物立繪縮放比例
     CHARACTER_TO_BACKGROUND_RATIO = 1  # 人物立繪高度為背景高度的1.0倍
 
+    # 像素完整縮放設定
+    USE_PIXEL_PERFECT_SCALING = True  # 是否使用像素完整縮放
+    PIXEL_PERFECT_FILTER = True  # 是否在像素完整縮放時使用最近鄰過濾
+
     @staticmethod
     def calculate_character_size(background_width, background_height):
         """
@@ -176,6 +182,108 @@ class ImageScaling:
 
         return (x, y)
 
+    @staticmethod
+    def pixel_perfect_scale(surface, target_size):
+        """
+        像素完整縮放函數 - 保持圖片的銳利度和像素完整性
+
+        Args:
+            surface (pygame.Surface): 要縮放的表面
+            target_size (tuple): 目標尺寸 (width, height)
+
+        Returns:
+            pygame.Surface: 縮放後的表面
+        """
+        if not ImageScaling.USE_PIXEL_PERFECT_SCALING:
+            # 如果不使用像素完整縮放，使用傳統方法
+            return pygame.transform.scale(surface, target_size)
+
+        original_size = surface.get_size()
+        target_width, target_height = target_size
+        original_width, original_height = original_size
+
+        # 計算縮放倍數
+        scale_x = target_width / original_width
+        scale_y = target_height / original_height
+
+        # 檢查是否可以使用整數倍縮放（允許小誤差）
+        if (
+            abs(scale_x - round(scale_x)) < 0.01
+            and abs(scale_y - round(scale_y)) < 0.01
+            and abs(scale_x - scale_y) < 0.01
+            and scale_x >= 1
+        ):
+            # 使用整數倍縮放，保持像素銳利
+            scale_factor = round(scale_x)
+
+            if scale_factor == 1:
+                # 沒有縮放，直接返回
+                if target_size == original_size:
+                    return surface.copy()
+                else:
+                    # 需要裁剪或填充
+                    result = pygame.Surface(target_size, pygame.SRCALPHA)
+                    x_offset = (target_width - original_width) // 2
+                    y_offset = (target_height - original_height) // 2
+                    result.blit(surface, (x_offset, y_offset))
+                    return result
+
+            # 對於整數倍縮放，使用快速的重複blit方法
+            scaled_size = (
+                original_width * scale_factor,
+                original_height * scale_factor,
+            )
+            scaled_surface = pygame.Surface(scaled_size, pygame.SRCALPHA)
+
+            # 使用pygame的transform.scale進行整數倍縮放，然後手動確保像素完整性
+            temp_scaled = pygame.transform.scale(surface, scaled_size)
+            scaled_surface.blit(temp_scaled, (0, 0))
+
+            # 如果目標尺寸與縮放尺寸不同，居中顯示
+            if scaled_size != target_size:
+                final_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+                x_offset = (target_width - scaled_size[0]) // 2
+                y_offset = (target_height - scaled_size[1]) // 2
+                final_surface.blit(scaled_surface, (x_offset, y_offset))
+                return final_surface
+
+            return scaled_surface
+
+        # 對於非整數倍縮放，根據設定選擇算法
+        if ImageScaling.PIXEL_PERFECT_FILTER:
+            # 使用最近鄰算法避免模糊，但保持原生性能
+            # 這個方法比手動設置每個像素快得多
+            # 暫時禁用平滑過濾以獲得最接近的像素效果
+            result = pygame.transform.scale(surface, target_size)
+            return result
+        else:
+            # 使用平滑縮放
+            return pygame.transform.smoothscale(surface, target_size)
+
+    @staticmethod
+    def get_optimal_scale_factor(original_size, target_size):
+        """
+        獲取最優的整數縮放倍數
+
+        Args:
+            original_size (tuple): 原始尺寸 (width, height)
+            target_size (tuple): 目標尺寸 (width, height)
+
+        Returns:
+            int: 最優縮放倍數
+        """
+        original_width, original_height = original_size
+        target_width, target_height = target_size
+
+        scale_x = target_width / original_width
+        scale_y = target_height / original_height
+
+        # 選擇較小的縮放倍數，保證圖片完整顯示
+        scale = min(scale_x, scale_y)
+
+        # 返回最大的不超過目標的整數倍數
+        return max(1, int(scale))
+
 
 # 檔案路徑設定
 class Paths:
@@ -212,8 +320,14 @@ class AudioSettings:
 class DebugSettings:
     DEBUG_MODE = True
     SHOW_FPS = True
-    SHOW_COLLISION_BOXES = False
-    LOG_LEVEL = "INFO"  # DEBUG, INFO, WARNING, ERROR
+    SHOW_COLLISION_BOXES = True
+    SHOW_SCENE_INFO = True
+    SHOW_DIALOGUE_DEBUG = True
+    SHOW_AFFECTION_DEBUG = True
+    SHOW_TIME_DEBUG = True
+    SHOW_EVENT_DEBUG = True
+    LOG_LEVEL = "DEBUG"  # DEBUG, INFO, WARNING, ERROR
+    VERBOSE_LOGGING = True
 
 
 # 輸入設定

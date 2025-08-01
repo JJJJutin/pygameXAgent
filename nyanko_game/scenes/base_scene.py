@@ -152,6 +152,46 @@ class BaseScene(ABC):
         """退出遊戲的便利方法"""
         self.game_engine.quit_game()
 
+    def get_mouse_pos(self) -> tuple:
+        """
+        獲取正確轉換後的滑鼠位置
+
+        Returns:
+            tuple: 遊戲座標系中的滑鼠位置 (x, y)
+        """
+        return self.game_engine.get_mouse_pos()
+
+    def get_mouse_buttons(self) -> tuple:
+        """
+        獲取滑鼠按鈕狀態
+
+        Returns:
+            tuple: (left, middle, right) 按鈕狀態
+        """
+        return self.game_engine.get_mouse_buttons()
+
+    def is_mouse_button_pressed(self, button: int) -> bool:
+        """
+        檢查滑鼠按鈕是否被按下
+
+        Args:
+            button: 按鈕編號 (1=左鍵, 2=中鍵, 3=右鍵)
+
+        Returns:
+            bool: 按鈕是否被按下
+        """
+        return self.game_engine.is_mouse_button_pressed(button)
+
+    def is_mouse_in_game_area(self) -> bool:
+        """
+        檢查滑鼠是否在遊戲區域內
+
+        Returns:
+            bool: 是否在遊戲區域內
+        """
+        raw_mouse_pos = pygame.mouse.get_pos()
+        return self.game_engine.is_mouse_in_game_area(raw_mouse_pos)
+
     def get_screen_size(self) -> tuple:
         """
         獲取螢幕尺寸

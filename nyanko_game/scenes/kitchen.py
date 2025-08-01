@@ -20,7 +20,7 @@ class KitchenScene(BaseScene):
             {
                 "text": "和にゃんこ一起做早餐",
                 "action": "breakfast_cooking",
-                "dialogue": "cooking_breakfast_01",
+                "dialogue": "cooking_together_01",
             },
             {
                 "text": "準備豐盛的晚餐",
@@ -30,17 +30,31 @@ class KitchenScene(BaseScene):
             {
                 "text": "學習新的菜色",
                 "action": "new_recipe",
-                "dialogue": "new_recipe_learning",
+                "dialogue": "new_recipe_learning_01",
             },
             {
                 "text": "陪にゃんこ聊天",
                 "action": "kitchen_chat",
-                "dialogue": "kitchen_casual_chat",
+                "dialogue": "kitchen_chat_01",
+            },
+            {
+                "text": "幫忙清洗碗盤",
+                "action": "wash_dishes",
+                "dialogue": "kitchen_washing_01",
+            },
+            {
+                "text": "檢查冰箱",
+                "action": "check_fridge",
+                "dialogue": "kitchen_fridge_01",
             },
             {"text": "返回客廳", "action": "leave_kitchen", "dialogue": None},
         ]
         self.selected_option = 0
         self.show_menu = True
+        self.nyanko_position = None
+        self.nyanko_mood = "normal"
+        self.cooking_state = "idle"  # idle, cooking, cleaning
+        self.interaction_areas = {}
         self.nyanko_messages = [
             "主人想在廚房做什麼呢？人家來幫忙喵～",
             "一起做料理最開心了喵❤",
@@ -78,6 +92,7 @@ class KitchenScene(BaseScene):
         counter_color = (139, 69, 19)
         counter_rect = pygame.Rect(50, screen_height - 200, screen_width - 100, 80)
         pygame.draw.rect(self.background, counter_color, counter_rect)
+        self.interaction_areas["counter"] = counter_rect
 
         # 流理台檯面
         surface_color = (222, 184, 135)
@@ -88,6 +103,7 @@ class KitchenScene(BaseScene):
         fridge_color = (192, 192, 192)
         fridge_rect = pygame.Rect(50, 200, 100, 300)
         pygame.draw.rect(self.background, fridge_color, fridge_rect)
+        self.interaction_areas["fridge"] = fridge_rect
 
         # 冰箱門把
         handle_color = (128, 128, 128)
@@ -98,12 +114,22 @@ class KitchenScene(BaseScene):
         stove_color = (105, 105, 105)
         stove_rect = pygame.Rect(200, screen_height - 180, 150, 60)
         pygame.draw.rect(self.background, stove_color, stove_rect)
+        self.interaction_areas["stove"] = stove_rect
 
         # 爐火位置
         for i in range(2):
             fire_x = 220 + i * 60
             fire_y = screen_height - 160
             pygame.draw.circle(self.background, (64, 64, 64), (fire_x, fire_y), 15)
+
+        # 水槽
+        sink_color = (240, 240, 240)
+        sink_rect = pygame.Rect(screen_width - 200, screen_height - 180, 120, 60)
+        pygame.draw.rect(self.background, sink_color, sink_rect)
+        self.interaction_areas["sink"] = sink_rect
+
+        # にゃんこ初始位置（流理台旁）
+        self.nyanko_position = (screen_width // 2, screen_height - 250)
 
     def setup_ui(self):
         """設置UI元素"""
@@ -116,6 +142,7 @@ class KitchenScene(BaseScene):
 
         # 根據遊戲狀態更新可用選項
         if game_state:
+            self.current_game_state = game_state
             current_time = game_state.get("current_time_period", "morning")
             affection = game_state.get("affection", 0)
 
@@ -124,6 +151,47 @@ class KitchenScene(BaseScene):
 
             # 根據好感度調整對話
             self._update_message_by_affection(affection)
+
+            # 更新にゃんこ行為
+            self._update_nyanko_behavior(current_time, affection)
+        else:
+            # 如果沒有提供遊戲狀態，從遊戲引擎獲取
+            if hasattr(self.game_engine, "game_state"):
+                self.current_game_state = self.game_engine.game_state
+            else:
+                self.current_game_state = {}
+
+        # 更新對話系統
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system
+        ):
+            self.game_engine.dialogue_system.update(dt, self.current_game_state)
+
+    def _update_nyanko_behavior(self, time_period: str, affection: int):
+        """根據時間和好感度更新にゃんこ行為"""
+        screen_width, screen_height = self.get_screen_size()
+
+        if time_period == "morning":
+            # 早晨在準備早餐
+            self.nyanko_position = (280, screen_height - 250)  # 靠近爐子
+            self.nyanko_mood = "energetic"
+            self.cooking_state = "cooking"
+        elif time_period == "afternoon":
+            # 下午在整理廚房
+            self.nyanko_position = (screen_width - 150, screen_height - 250)  # 靠近水槽
+            self.nyanko_mood = "normal"
+            self.cooking_state = "cleaning"
+        elif time_period == "evening":
+            # 傍晚準備晚餐
+            self.nyanko_position = (200, screen_height - 250)  # 在流理台
+            self.nyanko_mood = "happy"
+            self.cooking_state = "cooking"
+        else:
+            # 其他時間一般位置
+            self.nyanko_position = (screen_width // 2, screen_height - 250)
+            self.nyanko_mood = "normal"
+            self.cooking_state = "idle"
 
     def _update_options_by_time(self, time_period):
         """根據時間段更新選項"""
@@ -161,6 +229,10 @@ class KitchenScene(BaseScene):
         )
         screen.blit(message_text, (20, 70))
 
+        # 繪製にゃんこ
+        if self.nyanko_position:
+            self._render_nyanko(screen)
+
         # 繪制選項選單
         if self.show_menu:
             self._render_cooking_menu(screen)
@@ -171,6 +243,37 @@ class KitchenScene(BaseScene):
             "↑↓: 選擇  Enter: 確認  ESC: 返回客廳", True, Colors.GRAY
         )
         screen.blit(hint_text, (20, screen_height - 30))
+
+        # 繪製對話框（如果需要）
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system
+        ):
+            self.game_engine.dialogue_system.render(screen)
+
+    def _render_nyanko(self, screen: pygame.Surface):
+        """繪製にゃんこ"""
+        nyanko_color = Colors.PINK if self.nyanko_mood == "happy" else Colors.LIGHT_PINK
+        if self.nyanko_mood == "energetic":
+            nyanko_color = Colors.YELLOW
+
+        # 簡單的にゃんこ表示（圓形）
+        pygame.draw.circle(screen, nyanko_color, self.nyanko_position, 25)
+
+        # 貓耳
+        ear_left = (self.nyanko_position[0] - 12, self.nyanko_position[1] - 18)
+        ear_right = (self.nyanko_position[0] + 12, self.nyanko_position[1] - 18)
+        pygame.draw.circle(screen, nyanko_color, ear_left, 6)
+        pygame.draw.circle(screen, nyanko_color, ear_right, 6)
+
+        # 活動狀態顯示
+        activity_text = {"cooking": "🍳", "cleaning": "🧽", "idle": "😺"}.get(
+            self.cooking_state, "😺"
+        )
+
+        activity_surface = self.ui_font.render(activity_text, True, Colors.BLACK)
+        text_pos = (self.nyanko_position[0] - 10, self.nyanko_position[1] + 35)
+        screen.blit(activity_surface, text_pos)
 
     def _render_cooking_menu(self, screen):
         """渲染料理選單"""
@@ -203,6 +306,26 @@ class KitchenScene(BaseScene):
 
     def handle_event(self, event: pygame.event.Event):
         """處理事件"""
+        # 首先讓對話系統處理事件
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system
+        ):
+            # 獲取當前遊戲狀態
+            game_state = getattr(
+                self,
+                "current_game_state",
+                (
+                    self.game_engine.game_state
+                    if hasattr(self.game_engine, "game_state")
+                    else {}
+                ),
+            )
+
+            # 如果對話系統處理了事件，就不再繼續處理其他事件
+            if self.game_engine.dialogue_system.handle_event(event, game_state):
+                return
+
         if event.type == pygame.KEYDOWN:
             if self.show_menu:
                 if event.key == pygame.K_UP:
@@ -229,6 +352,14 @@ class KitchenScene(BaseScene):
         if action == "leave_kitchen":
             self.change_scene("living_room")
         elif dialogue_id:
+            # 檢查是否已有對話在進行中
+            if (
+                hasattr(self.game_engine, "dialogue_system")
+                and self.game_engine.dialogue_system.is_active
+            ):
+                print("對話進行中，請稍候...")
+                return
+
             # 觸發對話系統
             if hasattr(self.game_engine, "dialogue_system"):
                 self.game_engine.dialogue_system.start_dialogue(dialogue_id)
@@ -236,8 +367,8 @@ class KitchenScene(BaseScene):
             # 根據動作類型給予好感度獎勵
             affection_bonus = self._get_affection_bonus(action)
             if affection_bonus > 0 and hasattr(self.game_engine, "affection_system"):
-                self.game_engine.affection_system.add_affection(
-                    affection_bonus, f"在廚房{action}"
+                self.game_engine.affection_system.change_affection(
+                    affection_bonus, reason=f"在廚房{action}"
                 )
 
     def _get_affection_bonus(self, action):

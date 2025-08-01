@@ -126,7 +126,7 @@ class ImageManager:
 
     def get_scaled_image(self, key, size):
         """
-        獲取縮放後的圖片
+        獲取縮放後的圖片 - 使用像素完整縮放
 
         Args:
             key (str): 圖片識別鍵
@@ -137,7 +137,9 @@ class ImageManager:
         """
         image = self.get_image(key)
         if image:
-            return pygame.transform.scale(image, size)
+            from config.settings import ImageScaling
+
+            return ImageScaling.pixel_perfect_scale(image, size)
         return None
 
     def get_background_for_time(self, location, time_period):
@@ -184,7 +186,7 @@ class ImageManager:
         self, character, emotion="normal", outfit="default", target_size=None
     ):
         """
-        獲取按比例縮放的角色圖片
+        獲取按比例縮放的角色圖片 - 使用像素完整縮放
 
         Args:
             character (str): 角色名稱
@@ -205,8 +207,10 @@ class ImageManager:
         if target_size is None:
             return original_image
 
-        # 縮放圖片
-        return pygame.transform.scale(original_image, target_size)
+        # 使用像素完整縮放圖片
+        from config.settings import ImageScaling
+
+        return ImageScaling.pixel_perfect_scale(original_image, target_size)
 
     def get_adaptive_character_size(self, screen_width, screen_height):
         """

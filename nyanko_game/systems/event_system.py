@@ -483,6 +483,10 @@ class EventSystem:
         # 這裡需要與對話系統整合
         dialogue_system = getattr(self.game_engine, "dialogue_system", None)
         if dialogue_system:
+            # 檢查是否已有對話在進行中
+            if dialogue_system.is_active:
+                print(f"對話進行中，跳過事件對話: {dialogue_id}")
+                return
             dialogue_system.start_dialogue(dialogue_id, game_state)
         else:
             print(f"觸發對話: {dialogue_id}")
