@@ -64,7 +64,7 @@ class GameTime:
 
     current_day: int = 1
     current_period: TimePeriod = TimePeriod.EARLY_MORNING
-    time_points: int = 6  # 每日時間點數 (對應6個時間段)
+    time_points: int = 1  # 初始時間點數，對應清晨時段
     week_day: int = 1  # 星期幾 (1-7)
 
 
@@ -489,9 +489,9 @@ class EventDrivenTimeSystem:
         for key, value in consequences.items():
             if key == "unlocks":
                 if isinstance(value, list):
-                    self.game_state["unlocked_activities"].update(value)
+                    self.game_state["unlocked_activities"].extend(value)
                 else:
-                    self.game_state["unlocked_activities"].add(value)
+                    self.game_state["unlocked_activities"].append(value)
             elif key == "advances_day":
                 if value:
                     self._advance_to_next_day()
@@ -500,7 +500,7 @@ class EventDrivenTimeSystem:
         """推進時間"""
         self.game_time.time_points -= time_cost
 
-        # 如果時間點數用完，自動推進到下個時間段
+        # 如果時間點數用完或變成負數，自動推進到下個時間段
         if self.game_time.time_points <= 0:
             self._advance_to_next_period()
 
@@ -512,7 +512,7 @@ class EventDrivenTimeSystem:
             self.on_time_advance(self.game_time)
 
     def _advance_to_next_period(self):
-        """推進到下個時間段"""
+        """推進到下個時間段，並根據時段分配合理的時間點數"""
         periods = list(TimePeriod)
         current_index = periods.index(self.game_time.current_period)
 
@@ -522,13 +522,28 @@ class EventDrivenTimeSystem:
         else:
             # 推進到下個時間段
             self.game_time.current_period = periods[current_index + 1]
-            self.game_time.time_points = 2  # 每個時間段給2個時間點數
+            # 合理分配每時段的時間點數
+            period_points = {
+                TimePeriod.EARLY_MORNING: 1,  # 清晨
+                TimePeriod.MORNING: 2,  # 上午
+                TimePeriod.AFTERNOON: 2,  # 下午
+                TimePeriod.EVENING: 1,  # 傍晚
+                TimePeriod.NIGHT: 1,  # 夜晚
+                TimePeriod.LATE_NIGHT: 1,  # 深夜
+            }
+            self.game_time.time_points = period_points.get(
+                self.game_time.current_period, 1
+            )
+            # 改進的除錯訊息，包含時間點數資訊
+            print(
+                f"[時間推進] {self.period_names[self.game_time.current_period]} - 時間點數重置為: {self.game_time.time_points}"
+            )
 
     def _advance_to_next_day(self):
-        """推進到下一天"""
+        """推進到下一天，並分配清晨時段點數"""
         self.game_time.current_day += 1
         self.game_time.current_period = TimePeriod.EARLY_MORNING
-        self.game_time.time_points = 6  # 新的一天開始
+        self.game_time.time_points = 1  # 新的一天清晨只有1點
         self.game_time.week_day = (self.game_time.week_day % 7) + 1
 
         # 重置每日事件
@@ -562,12 +577,24 @@ class EventDrivenTimeSystem:
 
     def get_current_time_info(self) -> Dict[str, Any]:
         """獲取當前時間資訊"""
+        # 獲取當前時間段的最大時間點數
+        period_points = {
+            TimePeriod.EARLY_MORNING: 1,  # 清晨
+            TimePeriod.MORNING: 2,  # 上午
+            TimePeriod.AFTERNOON: 2,  # 下午
+            TimePeriod.EVENING: 1,  # 傍晚
+            TimePeriod.NIGHT: 1,  # 夜晚
+            TimePeriod.LATE_NIGHT: 1,  # 深夜
+        }
+        max_points = period_points.get(self.game_time.current_period, 1)
+
         return {
             "day": self.game_time.current_day,
             "period": self.period_names[self.game_time.current_period],
             "period_id": self.game_time.current_period.value,
             "time": self.period_times[self.game_time.current_period],
             "time_points": self.game_time.time_points,
+            "max_time_points": max_points,
             "week_day": self.game_time.week_day,
         }
 

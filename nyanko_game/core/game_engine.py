@@ -14,7 +14,6 @@ from systems.image_manager import image_manager
 from systems.daily_event_system import DailyEventSystem
 from systems.daily_event_system import DailyEventSystem
 from systems.progress_tracker import ProgressTracker
-from systems.audio_system import audio_manager
 
 
 class GameEngine:
@@ -42,6 +41,7 @@ class GameEngine:
         self.debug_mode = DebugSettings.DEBUG_MODE
 
         # 核心系統
+        self.unified_choice_system = None
         self.dialogue_system: Optional[DialogueSystem] = None
         self.affection_system: Optional[AffectionSystem] = None
         self.time_system = None
@@ -230,10 +230,18 @@ class GameEngine:
             # 初始化圖片管理器
             image_manager.load_all_images()
 
+            # 初始化統一選擇系統
+            from systems.unified_choice_system import UnifiedChoiceSystem
+
+            self.unified_choice_system = UnifiedChoiceSystem(self)
+
             # 初始化對話系統
             self.dialogue_system = DialogueSystem(self)
             dialogue_data_path = "assets/dialogue_data.json"
             self.dialogue_system.load_dialogue_data(dialogue_data_path)
+
+            # 將統一選擇系統設置到對話系統
+            self.dialogue_system.set_unified_choice_system(self.unified_choice_system)
 
             # 初始化好感度系統
             self.affection_system = AffectionSystem(self)
@@ -253,7 +261,15 @@ class GameEngine:
             self.progress_tracker = ProgressTracker(self)
 
             # 初始化音效系統
-            self.audio_manager = audio_manager
+            from systems.audio_system import AudioManager
+
+            self.audio_manager = AudioManager()
+
+            # 初始化事件驅動時間系統
+            from systems.event_driven_time_system import EventDrivenTimeSystem
+
+            self.event_driven_time_system = EventDrivenTimeSystem()
+            # 設定事件驅動時間系統的回調（如有需要，可根據實際情況補充）
 
             # 設定系統間的回調關聯
             self.affection_system.on_affection_change = self._on_affection_change
@@ -447,6 +463,14 @@ class GameEngine:
                         ):
                             continue  # 對話系統處理了事件，跳過其他處理
 
+                    # 統一選擇系統事件處理
+                    if (
+                        self.unified_choice_system
+                        and self.unified_choice_system.is_active
+                    ):
+                        if self.unified_choice_system.handle_event(transformed_event):
+                            continue  # 統一選擇系統處理了事件，跳過其他處理
+
                     # 將轉換後的事件傳遞給場景管理器
                     if self.scene_manager:
                         self.scene_manager.handle_event(transformed_event)
@@ -457,6 +481,11 @@ class GameEngine:
             if self.dialogue_system and self.dialogue_system.is_dialogue_active():
                 if self.dialogue_system.handle_event(event, self.game_state):
                     continue  # 對話系統處理了事件，跳過其他處理
+
+            # 統一選擇系統事件處理
+            if self.unified_choice_system and self.unified_choice_system.is_active:
+                if self.unified_choice_system.handle_event(event):
+                    continue  # 統一選擇系統處理了事件，跳過其他處理
 
             elif event.type == pygame.KEYDOWN:
                 # 處理全域按鍵
@@ -486,6 +515,9 @@ class GameEngine:
                         else:
                             # 預設行為：暫停或返回主選單
                             self.toggle_pause()
+                elif event.key == pygame.K_SPACE:
+                    # 空白鍵處理 - 觸發與にゃんこ的對話
+                    self._handle_space_key()
 
             # 將事件傳遞給場景管理器
             if self.scene_manager:
@@ -497,9 +529,18 @@ class GameEngine:
         # 只在遊戲場景中更新時間系統，不在主選單中
         current_scene = self.scene_manager.current_scene if self.scene_manager else None
         if current_scene and current_scene.__class__.__name__ != "MainMenuScene":
-            if self.time_system:
+            # 更新事件驅動時間系統
+            if self.event_driven_time_system:
+                # 事件驅動系統不需要每幀自動 update，活動由玩家觸發
+                time_info = self.event_driven_time_system.get_current_time_info()
+                self.game_state["current_time_period"] = time_info.get(
+                    "period_id", "morning"
+                )
+                self.game_state["current_time"] = time_info.get("time", "08:00")
+                self.game_state["current_day"] = time_info.get("day", 1)
+                self.game_state["current_weekday"] = time_info.get("week_day", 1)
+            elif self.time_system:
                 self.time_system.update(self.dt)
-                # 更新遊戲狀態中的時間相關資訊
                 self.game_state["current_time_period"] = (
                     self.time_system.get_current_time_period().value
                 )
@@ -563,6 +604,10 @@ class GameEngine:
                 if self.dialogue_system:
                     self.dialogue_system.render(self.screen)
 
+                # 渲染統一選擇系統
+                if self.unified_choice_system:
+                    self.unified_choice_system.render(self.screen)
+
                 if self.debug_mode:
                     self.render_debug_info()
 
@@ -577,6 +622,10 @@ class GameEngine:
 
                 if self.dialogue_system:
                     self.dialogue_system.render(virtual_surface)
+
+                # 渲染統一選擇系統
+                if self.unified_choice_system:
+                    self.unified_choice_system.render(virtual_surface)
 
                 if self.debug_mode:
                     self._render_debug_info_on_surface(virtual_surface)
@@ -624,6 +673,10 @@ class GameEngine:
 
             if self.dialogue_system:
                 self.dialogue_system.render(self.screen)
+
+            # 渲染統一選擇系統
+            if self.unified_choice_system:
+                self.unified_choice_system.render(self.screen)
 
             if self.debug_mode:
                 self.render_debug_info()
@@ -836,6 +889,47 @@ class GameEngine:
         if self.debug_mode:
             print(f"遊戲{'暫停' if self.paused else '繼續'}")
 
+    def _handle_space_key(self):
+        """處理空白鍵 - 觸發與にゃんこ的對話"""
+        # 檢查當前場景是否是遊戲場景（不是主選單）
+        current_scene = self.scene_manager.current_scene if self.scene_manager else None
+        if not current_scene or current_scene.__class__.__name__ == "MainMenuScene":
+            return
+
+        # 檢查對話系統是否已經激活
+        if self.dialogue_system and self.dialogue_system.is_dialogue_active():
+            print("對話已經在進行中...")
+            return
+
+        # 檢查當前場景是否有にゃんこ
+        if hasattr(current_scene, "nyanko_present") and current_scene.nyanko_present:
+            # 觸發與にゃんこ的互動
+            if hasattr(current_scene, "_interact_with_nyanko"):
+                print("🗨️ 空白鍵觸發與にゃんこ的對話")
+                current_scene._interact_with_nyanko()
+            else:
+                # 直接開始一個基本對話
+                time_info = self._get_current_time_info()
+                time_period = time_info.get("period_id", "morning")
+                dialogue_id = f"greeting_{time_period}_01"
+                print(f"🗨️ 空白鍵觸發對話: {dialogue_id}")
+                self.start_dialogue(dialogue_id)
+        else:
+            print("💭 にゃんこ不在當前場景")
+
+    def _get_current_time_info(self):
+        """獲取當前時間信息"""
+        if hasattr(self, "event_driven_time_system") and self.event_driven_time_system:
+            return self.event_driven_time_system.get_current_time_info()
+        elif hasattr(self, "time_system") and self.time_system:
+            return {
+                "period_id": getattr(self.time_system, "current_period", "morning"),
+                "time": getattr(self.time_system, "current_time", "08:00"),
+                "day": getattr(self.time_system, "current_day", 1),
+            }
+        else:
+            return {"period_id": "morning", "time": "08:00", "day": 1}
+
     def quit_game(self):
         """退出遊戲"""
         if self.debug_mode:
@@ -906,7 +1000,9 @@ class GameEngine:
 
     def get_current_time_info(self) -> dict:
         """獲取當前時間資訊"""
-        if self.time_system:
+        if self.event_driven_time_system:
+            return self.event_driven_time_system.get_current_time_info()
+        elif self.time_system:
             return {
                 "time": self.time_system.get_current_time(),
                 "period": self.time_system.get_current_time_period().value,
@@ -925,6 +1021,26 @@ class GameEngine:
             "season": "春天",
             "weekday": "星期一",
         }
+
+    def get_scene_activities(self, scene_name: str):
+        """取得當前場景可用活動（目前僅客廳支援）"""
+        if self.event_driven_time_system:
+            return self.event_driven_time_system.get_available_activities()
+        return []
+
+    def execute_activity(self, activity_id: str):
+        """執行指定活動"""
+        if self.event_driven_time_system:
+            result = self.event_driven_time_system.execute_activity(activity_id)
+            return result.get("success", False)
+        return False
+
+    def skip_time_period(self):
+        """跳過當前時間段"""
+        if self.event_driven_time_system:
+            self.event_driven_time_system.force_advance_period()
+            return True
+        return False
 
     def get_screen_size(self) -> tuple:
         """

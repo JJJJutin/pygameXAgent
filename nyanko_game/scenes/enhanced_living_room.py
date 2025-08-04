@@ -5,6 +5,7 @@
 """
 
 import pygame
+from typing import Dict, Any
 from scenes.base_scene import BaseScene
 from config.settings import *
 from systems.image_manager import image_manager
@@ -26,7 +27,7 @@ class EnhancedLivingRoomScene(BaseScene):
         self.nyanko_position = (600, 400)
         self.nyanko_rect = None
 
-        # 事件驅動活動系統
+        # 事件驅動活動系統 - 隱藏原有活動選單
         self.activity_menu_visible = False
         self.selected_activity = 0
         self.available_activities = []
@@ -38,6 +39,9 @@ class EnhancedLivingRoomScene(BaseScene):
         self.weather_state = "normal"
 
         super().__init__(game_engine, scene_manager)
+
+        # 使用遊戲引擎的統一選擇系統
+        self.unified_choice_system = self.game_engine.unified_choice_system
 
         # 初始化UI系統 - 只使用GameStatusUI作為唯一UI面板
         screen_width, screen_height = self.get_screen_size()
@@ -154,9 +158,14 @@ class EnhancedLivingRoomScene(BaseScene):
         """渲染場景"""
         # 獲取當前時間資訊來選擇背景
         time_info = self._get_current_time_info()
-        time_period = time_info.get("period", "MORNING")
+        # 支援 period_id 與 period
+        period_id = time_info.get("period_id")
+        period = period_id if period_id else time_info.get("period", "morning")
+        # 統一小寫
+        period = str(period).lower()
 
-        if time_period in ["MORNING", "AFTERNOON"]:
+        # 上午/下午都用早晨背景，其餘用傍晚背景
+        if period in ["morning", "afternoon"]:
             current_bg = self.background_morning
         else:
             current_bg = self.background_evening
@@ -171,16 +180,19 @@ class EnhancedLivingRoomScene(BaseScene):
         else:
             screen.fill(Colors.LIGHT_PINK)
 
-        # 繪製にゃんこ
-        if self.nyanko_present:
+        # 角色立繪只在對話時出現（參考 renpy）
+        if (
+            self.nyanko_present
+            and hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system.is_active
+        ):
             self._render_nyanko(screen)
 
         # 繪製新的UI系統
         self._render_new_ui(screen)
 
-        # 繪製活動選單
-        if self.activity_menu_visible:
-            self._render_activity_menu(screen)
+        # 不再顯示獨立的活動選單，因為已經整合到對話選擇中
+        # if self.activity_menu_visible and ...
 
         # 繪製活動結果
         if self.activity_result_display:
@@ -286,16 +298,26 @@ class EnhancedLivingRoomScene(BaseScene):
                     "day": time_system.get_current_day(),
                     "time": time_system.get_current_time(),
                     "period": time_system.get_current_time_period().value,
-                    "time_points": time_system.get_time_points(),
-                    "max_time_points": time_system.get_max_time_points(),
+                    "period_id": time_system.get_current_time_period().value,
+                    "time_points": (
+                        time_system.get_time_points()
+                        if hasattr(time_system, "get_time_points")
+                        else 2
+                    ),
+                    "max_time_points": (
+                        time_system.get_max_time_points()
+                        if hasattr(time_system, "get_max_time_points")
+                        else 2
+                    ),
                 }
             else:
                 time_info = {
                     "day": 1,
                     "time": "08:00",
                     "period": "morning",
-                    "time_points": 6,
-                    "max_time_points": 6,
+                    "period_id": "morning",
+                    "time_points": 2,
+                    "max_time_points": 2,
                 }
 
         # 準備遊戲狀態
@@ -380,7 +402,7 @@ class EnhancedLivingRoomScene(BaseScene):
         if not self.activity_menu_visible:
             if self.available_activities:
                 hint_text = self.ui_font.render(
-                    "SPACE: 活動選單  CLICK: 與にゃんこ互動", True, Colors.GRAY
+                    "CLICK: 與にゃんこ互動  (活動選項已整合至對話中)", True, Colors.GRAY
                 )
             else:
                 hint_text = self.ui_font.render(
@@ -399,8 +421,15 @@ class EnhancedLivingRoomScene(BaseScene):
         screen.blit(nav_text, (20, screen_height - 50))
 
     def _get_period_display(self, period: str) -> str:
-        """獲取時間段顯示文字"""
+        """獲取時間段顯示文字 (支援 period id 與中文)"""
         period_names = {
+            "early_morning": "清晨",
+            "morning": "上午",
+            "afternoon": "下午",
+            "evening": "傍晚",
+            "night": "夜晚",
+            "late_night": "深夜",
+            # 支援大寫
             "EARLY_MORNING": "清晨",
             "MORNING": "上午",
             "AFTERNOON": "下午",
@@ -408,7 +437,7 @@ class EnhancedLivingRoomScene(BaseScene):
             "NIGHT": "夜晚",
             "LATE_NIGHT": "深夜",
         }
-        return period_names.get(period, "未知")
+        return period_names.get(str(period), "未知")
 
     def _render_activity_menu(self, screen: pygame.Surface):
         """渲染活動選單"""
@@ -563,7 +592,7 @@ class EnhancedLivingRoomScene(BaseScene):
 
     def handle_event(self, event: pygame.event.Event):
         """處理事件"""
-        # 對話系統優先處理
+        # 對話系統優先處理（包含統一選擇系統）
         if (
             hasattr(self.game_engine, "dialogue_system")
             and self.game_engine.dialogue_system
@@ -586,38 +615,22 @@ class EnhancedLivingRoomScene(BaseScene):
             pygame.time.set_timer(pygame.USEREVENT + 1, 0)
 
         elif event.type == pygame.KEYDOWN:
-            if self.activity_menu_visible:
-                if event.key == pygame.K_UP:
-                    self.selected_activity = (self.selected_activity - 1) % len(
-                        self.available_activities
-                    )
-                elif event.key == pygame.K_DOWN:
-                    self.selected_activity = (self.selected_activity + 1) % len(
-                        self.available_activities
-                    )
-                elif event.key == pygame.K_RETURN:
-                    self._execute_selected_activity()
-                elif event.key == pygame.K_ESCAPE:
-                    self.activity_menu_visible = False
-            else:
-                if event.key == pygame.K_SPACE:
-                    if self.available_activities:
-                        self.activity_menu_visible = True
-                        self.selected_activity = 0
-                    else:
-                        self._show_no_activities_message()
-                elif event.key == pygame.K_t:
-                    # 跳過時間段
-                    if hasattr(self.game_engine, "skip_time_period"):
-                        self.game_engine.skip_time_period()
-                elif event.key == pygame.K_1:
-                    self.change_scene("kitchen")
-                elif event.key == pygame.K_2:
-                    self.change_scene("bedroom")
-                elif event.key == pygame.K_3:
-                    self.change_scene("bathroom")
-                elif event.key == pygame.K_ESCAPE:
-                    self.change_scene("main_menu")
+            # 移除原有的活動選單快捷鍵，因為已經整合到對話中
+            # if event.key == pygame.K_SPACE:
+            #     ...
+
+            if event.key == pygame.K_t:
+                # 跳過時間段
+                if hasattr(self.game_engine, "skip_time_period"):
+                    self.game_engine.skip_time_period()
+            elif event.key == pygame.K_1:
+                self.change_scene("kitchen")
+            elif event.key == pygame.K_2:
+                self.change_scene("bedroom")
+            elif event.key == pygame.K_3:
+                self.change_scene("bathroom")
+            elif event.key == pygame.K_ESCAPE:
+                self.change_scene("main_menu")
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -671,7 +684,7 @@ class EnhancedLivingRoomScene(BaseScene):
             ):
                 self.game_engine.audio_manager.play_sfx("nyanko_interact", 0.7)
 
-            # 觸發簡單對話
+            # 觸發對話，統一選擇系統會自動整合活動選項
             time_info = self._get_current_time_info()
             # 使用英文時間段ID而不是中文名稱
             time_period = time_info.get("period_id", "morning")
@@ -707,3 +720,100 @@ class EnhancedLivingRoomScene(BaseScene):
             self.activity_menu_visible = False
         else:
             self.change_scene("main_menu")
+
+    def show_activity_result(self, result_info: Dict[str, Any]):
+        """顯示活動結果"""
+        self.activity_result = {
+            "name": result_info["activity_name"],
+            "changes": {
+                "體力": result_info.get("energy_change", 0),
+                "好感度": result_info.get("affection_change", 0),
+                "心情": result_info.get("mood_change", 0),
+            },
+            "time_cost": result_info.get("time_cost", 0),
+        }
+        self.activity_result_display = True
+        self.result_timer = pygame.time.get_ticks()
+
+        # 更新角色狀態顯示
+        if result_info.get("affection_change", 0) > 0:
+            self.nyanko_mood = "happy"
+
+        print(f"📋 活動結果: {self.activity_result['name']}")
+        for stat, change in self.activity_result["changes"].items():
+            if change != 0:
+                print(f"   {stat}: {change:+d}")
+        if self.activity_result["time_cost"] > 0:
+            print(f"   消耗時間點數: {self.activity_result['time_cost']}")
+
+    def _render_activity_result(self, screen: pygame.Surface):
+        """渲染活動結果顯示"""
+        if not self.activity_result_display:
+            return
+
+        # 檢查顯示時間（顯示3秒）
+        current_time = pygame.time.get_ticks()
+        if current_time - self.result_timer > 3000:
+            self.activity_result_display = False
+            return
+
+        screen_width, screen_height = screen.get_size()
+
+        # 結果框大小和位置
+        result_width = 400
+        result_height = 200
+        result_x = (screen_width - result_width) // 2
+        result_y = (screen_height - result_height) // 2
+
+        # 半透明背景
+        overlay = pygame.Surface((screen_width, screen_height))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(128)
+        screen.blit(overlay, (0, 0))
+
+        # 結果框背景
+        result_surface = pygame.Surface((result_width, result_height))
+        result_surface.fill(Colors.WHITE)
+        pygame.draw.rect(
+            result_surface, Colors.PRIMARY_COLOR, result_surface.get_rect(), 3
+        )
+
+        # 標題
+        title_text = self.ui_font.render("活動完成", True, Colors.PRIMARY_COLOR)
+        title_rect = title_text.get_rect()
+        title_rect.centerx = result_width // 2
+        title_rect.y = 20
+        result_surface.blit(title_text, title_rect)
+
+        # 活動名稱
+        activity_text = self.ui_font.render(
+            self.activity_result["name"], True, Colors.DARK_GRAY
+        )
+        activity_rect = activity_text.get_rect()
+        activity_rect.centerx = result_width // 2
+        activity_rect.y = 60
+        result_surface.blit(activity_text, activity_rect)
+
+        # 變化詳情
+        y_offset = 100
+        for stat, change in self.activity_result["changes"].items():
+            if change != 0:
+                color = Colors.GREEN if change > 0 else Colors.RED
+                change_text = self.ui_font.render(f"{stat}: {change:+d}", True, color)
+                change_rect = change_text.get_rect()
+                change_rect.centerx = result_width // 2
+                change_rect.y = y_offset
+                result_surface.blit(change_text, change_rect)
+                y_offset += 25
+
+        # 時間消耗
+        if self.activity_result.get("time_cost", 0) > 0:
+            time_text = self.ui_font.render(
+                f"消耗時間點數: {self.activity_result['time_cost']}", True, Colors.BLUE
+            )
+            time_rect = time_text.get_rect()
+            time_rect.centerx = result_width // 2
+            time_rect.y = y_offset
+            result_surface.blit(time_text, time_rect)
+
+        screen.blit(result_surface, (result_x, result_y))

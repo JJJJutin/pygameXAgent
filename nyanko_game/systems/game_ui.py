@@ -167,7 +167,12 @@ class GameStatusUI:
     def draw_time_points_indicator(self, screen: pygame.Surface, time_info: Dict):
         """繪製時間點數指示器 - 底部中央顯示"""
         time_points = time_info.get("time_points", 0)
-        max_points = 8  # 假設最大時間點數
+        max_points = time_info.get(
+            "max_time_points", 2
+        )  # 使用time_info中的max_time_points
+
+        # 確保time_points不會是負數
+        time_points = max(0, time_points)
 
         # 計算位置
         indicator_width = 300
@@ -212,12 +217,29 @@ class GameStatusUI:
 
         # 進度條
         if max_points > 0:
-            progress_width = int(bar_width * (time_points / max_points))
+            progress_ratio = min(1.0, time_points / max_points)  # 確保比例不超過1
+            progress_width = int(bar_width * progress_ratio)
             if progress_width > 0:
                 color = self._get_points_color(time_points, max_points)
                 pygame.draw.rect(
                     screen, color, (bar_x, bar_y, progress_width, bar_height)
                 )
+
+    def _get_max_points_for_period(self, time_info: Dict) -> int:
+        """根據時間段獲取最大時間點數"""
+        period = time_info.get("period_id", "morning")
+
+        # 根據事件驅動時間系統的設計，不同時間段有不同的時間點數
+        period_points = {
+            "early_morning": 1,  # 清晨
+            "morning": 2,  # 上午
+            "afternoon": 2,  # 下午
+            "evening": 1,  # 傍晚
+            "night": 1,  # 夜晚
+            "late_night": 1,  # 深夜
+        }
+
+        return period_points.get(period, 2)  # 預設2點
 
     def draw_activity_hint(self, screen: pygame.Surface, available_activities: int):
         """繪製活動提示 - 右下角"""
@@ -395,17 +417,44 @@ class GameStatusUI:
         if progress_width > 0:
             pygame.draw.rect(screen, color, (bar_x, bar_y, progress_width, bar_height))
 
-    def _get_period_display(self, period: str) -> str:
         """獲取時間段顯示文字"""
         period_names = {
             "EARLY_MORNING": "清晨",
             "MORNING": "上午",
             "AFTERNOON": "下午",
+            "NOON": "中午",
+            "中午": "中午",
             "EVENING": "傍晚",
             "NIGHT": "夜晚",
             "LATE_NIGHT": "深夜",
         }
-        return period_names.get(period, "未知")
+
+    # (已移除舊的 return，避免 period 未定義錯誤)
+    def _get_period_display(self, period: str) -> str:
+        """獲取時間段顯示文字，支持小寫/大寫/Enum.value/中文，並加強健壯性"""
+        period_names = {
+            "EARLY_MORNING": "清晨",
+            "MORNING": "上午",
+            "AFTERNOON": "下午",
+            "NOON": "中午",
+            "noon": "中午",
+            "EVENING": "傍晚",
+            "NIGHT": "夜晚",
+            "LATE_NIGHT": "深夜",
+        }
+        if not period or str(period).strip() == "":
+            return "未知"
+        # 若已經是中文，直接回傳
+        if str(period) in period_names.values():
+            return str(period)
+        # 處理常見異常值
+        key = str(period).upper()
+        if key in ("UNKNOWN", "未定義", "", "UNK"):
+            return "未知"
+        # 支援小寫
+        if key not in period_names:
+            key = str(period).lower()
+        return period_names.get(key, "未知")
 
     def _get_energy_color(self, energy: int) -> tuple:
         """根據體力值獲取顏色"""
@@ -480,4 +529,5 @@ class MinimalStatusUI:
             "NIGHT": "夜晚",
             "LATE_NIGHT": "深夜",
         }
-        return period_names.get(period, "未知")
+
+    # (已移除舊的 return，避免 period 未定義錯誤)

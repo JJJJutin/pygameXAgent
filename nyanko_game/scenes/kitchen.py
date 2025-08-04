@@ -50,7 +50,7 @@ class KitchenScene(BaseScene):
             {"text": "返回客廳", "action": "leave_kitchen", "dialogue": None},
         ]
         self.selected_option = 0
-        self.show_menu = True
+        self.show_menu = False  # 改為False，整合到對話選擇中
         self.nyanko_position = None
         self.nyanko_mood = "normal"
         self.cooking_state = "idle"  # idle, cooking, cleaning
@@ -64,6 +64,9 @@ class KitchenScene(BaseScene):
         self.current_message = 0
 
         super().__init__(game_engine, scene_manager)
+
+        # 使用遊戲引擎的統一選擇系統
+        self.unified_choice_system = self.game_engine.unified_choice_system
 
     def load_resources(self):
         """載入場景資源"""
@@ -233,15 +236,23 @@ class KitchenScene(BaseScene):
         if self.nyanko_position:
             self._render_nyanko(screen)
 
-        # 繪制選項選單
-        if self.show_menu:
-            self._render_cooking_menu(screen)
+        # 不再顯示舊的選項選單，因為已經整合到對話選擇中
+        # if self.show_menu:
+        #     self._render_cooking_menu(screen)
 
         # 操作提示
         screen_width, screen_height = self.get_screen_size()
-        hint_text = self.ui_font.render(
-            "↑↓: 選擇  Enter: 確認  ESC: 返回客廳", True, Colors.GRAY
-        )
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system.is_active
+        ):
+            # 對話進行中
+            hint_text = self.ui_font.render("對話進行中...", True, Colors.GRAY)
+        else:
+            # 提示點擊にゃんこ互動
+            hint_text = self.ui_font.render(
+                "點擊にゃんこ互動 | ESC: 返回客廳", True, Colors.GRAY
+            )
         screen.blit(hint_text, (20, screen_height - 30))
 
         # 繪製對話框（如果需要）
@@ -306,7 +317,7 @@ class KitchenScene(BaseScene):
 
     def handle_event(self, event: pygame.event.Event):
         """處理事件"""
-        # 首先讓對話系統處理事件
+        # 首先讓對話系統處理事件（包含統一選擇系統）
         if (
             hasattr(self.game_engine, "dialogue_system")
             and self.game_engine.dialogue_system
@@ -327,21 +338,111 @@ class KitchenScene(BaseScene):
                 return
 
         if event.type == pygame.KEYDOWN:
-            if self.show_menu:
-                if event.key == pygame.K_UP:
-                    self.selected_option = (self.selected_option - 1) % len(
-                        self.cooking_options
-                    )
-                elif event.key == pygame.K_DOWN:
-                    self.selected_option = (self.selected_option + 1) % len(
-                        self.cooking_options
-                    )
-                elif event.key == pygame.K_RETURN:
-                    self._handle_option_selection()
-                elif event.key == pygame.K_ESCAPE:
-                    self.change_scene("living_room")
-            elif event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_ESCAPE:
                 self.change_scene("living_room")
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # 左鍵
+                # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
+                mouse_pos = getattr(event, "pos", self.get_mouse_pos())
+                self._handle_mouse_click(mouse_pos)
+
+    def _handle_mouse_click(self, mouse_pos: tuple):
+        """處理滑鼠點擊"""
+        # 檢查是否點擊了にゃんこ
+        if self.nyanko_position:
+            nyanko_rect = pygame.Rect(
+                self.nyanko_position[0] - 30, self.nyanko_position[1] - 30, 60, 60
+            )
+            if nyanko_rect.collidepoint(mouse_pos):
+                self._interact_with_nyanko()
+
+    def _interact_with_nyanko(self):
+        """與にゃんこ互動"""
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system.is_active
+        ):
+            print("對話進行中，請稍候...")
+            return
+
+        # 設定心情並觸發對話
+        self.nyanko_mood = "happy"
+
+        # 播放音效
+        if (
+            hasattr(self.game_engine, "audio_manager")
+            and self.game_engine.audio_manager is not None
+        ):
+            self.game_engine.audio_manager.play_sfx("nyanko_interact", 0.7)
+
+        # 根據時間段選擇適當的對話
+        time_info = self._get_current_time_info()
+        time_period = time_info.get("period_id", "morning")
+
+        # 使用廚房專用的對話ID
+        dialogue_id = f"kitchen_greeting_{time_period}_01"
+
+        # 如果找不到特定對話，使用通用廚房對話
+        if (
+            not hasattr(self.game_engine, "dialogue_system")
+            or dialogue_id not in self.game_engine.dialogue_system.dialogue_data
+        ):
+            dialogue_id = "kitchen_chat_01"
+
+        self.game_engine.start_dialogue(dialogue_id)
+
+    def _get_current_time_info(self):
+        """獲取當前時間資訊"""
+        if hasattr(self.game_engine, "get_current_time_info"):
+            time_info = self.game_engine.get_current_time_info()
+            if not time_info:
+                return {
+                    "period": "MORNING",
+                    "period_id": "morning",
+                    "day": 1,
+                    "time": "08:00",
+                    "time_points": 8,
+                }
+            return time_info
+        return {
+            "period": "MORNING",
+            "period_id": "morning",
+            "day": 1,
+            "time": "08:00",
+            "time_points": 8,
+        }
+
+    def update(self, dt: float, game_state: dict = None):
+        """更新場景邏輯"""
+        if self.paused:
+            return
+
+        if game_state:
+            self.current_game_state = game_state
+        else:
+            if hasattr(self.game_engine, "game_state"):
+                self.current_game_state = self.game_engine.game_state
+            else:
+                self.current_game_state = {}
+
+        # 更新對話系統
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system
+        ):
+            self.game_engine.dialogue_system.update(dt, self.current_game_state)
+
+        # 獲取時間資訊
+        time_info = self._get_current_time_info()
+        time_period = time_info.get("period_id", "morning")
+
+        # 根據時間段更新にゃんこ位置和狀態
+        self._update_nyanko_by_time(time_period)
+
+        # 根據好感度更新訊息
+        affection = self.current_game_state.get("nyanko_affection", 50)
+        self._update_message_by_affection(affection)
 
     def _handle_option_selection(self):
         """處理選項選擇"""

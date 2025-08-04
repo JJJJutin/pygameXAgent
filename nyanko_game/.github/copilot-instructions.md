@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a pygame-based visual novel/dating simulation game featuring the catgirl maid character "にゃんこ" (Nyan-ko). The codebase follows a modular, event-driven architecture with clean separation of concerns.
+This is a pygame-based visual novel/dating simulation game featuring the catgirl maid character "にゃんこ" (Nyan-ko). The codebase follows a modular, event-driven architecture with clean separation of concerns and a sophisticated unified choice system.
 
 ## Architecture Patterns
 
@@ -19,19 +19,36 @@ The game uses a plugin-style system architecture where all major components are 
 ```
 GameEngine
 ├── SceneManager (handles scene transitions)
-├── DialogueSystem (manages conversations & choices)
+├── UnifiedChoiceSystem (integrates dialogue + activities + scene actions)
+├── DialogueSystem (manages conversations)
+├── EventDrivenTimeSystem (player-triggered time progression)
 ├── AffectionSystem (tracks relationship progress)
 ├── EventSystem (processes game events)
-├── TimeSystem (manages day/night cycles)
 └── AudioSystem (BGM/SFX management)
 ```
 
 ### Scene System Pattern
 
-- All scenes inherit from `BaseScene` abstract class
-- Scenes registered in `SceneManager._register_scenes()`
-- Scene lifecycle: `on_enter()` → `update()` → `render()` → `on_exit()`
+- All scenes inherit from `BaseScene` abstract class in `scenes/base_scene.py`
+- Scenes registered in `SceneManager._register_scenes()` method
+- Scene lifecycle: `on_enter(transition_data)` → `update(dt, game_state)` → `render(screen)` → `on_exit()`
 - Inter-scene communication via `transition_data` parameter
+- Each scene implements required methods: `load_resources()`, `setup_ui()`, `update()`, `render()`, `handle_event()`
+
+### Unified Choice System Architecture
+
+**Critical Pattern**: The `UnifiedChoiceSystem` is the heart of player interaction, merging:
+
+- **Dialogue responses** (from `DialogueNode.choices`)
+- **Activity selections** (from `EventDrivenTimeSystem`)
+- **Scene navigation** (inter-scene transitions)
+- **Time management** (skip periods, continue chat)
+
+**Integration Points**:
+
+- `DialogueSystem.set_unified_choice_system()` connects dialogue to unified choices
+- `UnifiedChoice.add_contextual_choices()` enriches base dialogue with scene-specific activities
+- Choice types auto-detected: `dialogue`, `activity`, `scene_action`
 
 ### Event-Driven Communication
 
@@ -55,8 +72,22 @@ Systems communicate through callbacks rather than direct dependencies:
 Complex fullscreen handling with pixel-perfect scaling:
 
 - `ImageScaling.pixel_perfect_scale()` maintains crisp graphics
-- Mouse coordinate transformation for fullscreen mode
+- Mouse coordinate transformation for fullscreen mode (`GameEngine.transform_mouse_pos()`)
 - Native resolution detection and scaling fallbacks
+- **Critical**: Mouse events require coordinate transformation in fullscreen mode
+
+### Time System Architecture
+
+**Two-Layer Time Design**:
+
+1. **BasicTimeSystem** - Traditional auto-advancing time
+2. **EventDrivenTimeSystem** - Player-action-triggered progression
+
+**Key Pattern**: Time advances only through player choices:
+
+- `ActivityChoice.time_cost` determines advancement
+- `TimePeriod` enum defines day segments
+- `GameTime.time_points` tracks remaining actions per period
 
 ## Development Workflows
 
@@ -69,9 +100,10 @@ python scripts/test_pixel_perfect_scaling.py  # Visual scaling test
 
 ### Debug Features
 
-- F1: Toggle debug info display
-- F2: Toggle pixel-perfect scaling
-- F11: Fullscreen toggle
+- **F1**: Toggle debug info display
+- **F2**: Toggle pixel-perfect scaling
+- **F11**: Fullscreen toggle
+- **Space**: Trigger dialogue with にゃんこ (in game scenes)
 - `DebugSettings.DEBUG_MODE = True` enables verbose logging
 
 ### Asset Management
@@ -123,11 +155,17 @@ game_state = {
 - Each system provides `save_data()`/`load_data()` methods
 - Auto-save triggers on major state changes
 
-### Dialogue System
+### Dialogue System Integration
 
-- JSON dialogue data with conditional branching
-- Choice effects modify game state immediately
-- Progress tracking for all dialogue interactions
+**Critical Pattern**: Dialogue choices get enhanced with contextual options:
+
+```python
+# In UnifiedChoiceSystem.add_contextual_choices()
+enhanced_choices = base_dialogue_choices.copy()
+# Add scene-specific activities
+# Add navigation options
+# Add time management actions
+```
 
 ## Common Patterns
 
@@ -136,6 +174,7 @@ game_state = {
 1. Create class inheriting `BaseScene` in `scenes/`
 2. Implement `load_resources()`, `setup_ui()`, `update()`, `render()`
 3. Register in `SceneManager._register_scenes()`
+4. **Important**: Use `self.unified_choice_system = self.game_engine.unified_choice_system`
 
 ### Adding Game Events
 
@@ -144,12 +183,34 @@ game_state = {
 3. Implement effect callbacks that modify game state
 4. Connect to progress tracking if needed
 
+### Working with Unified Choices
+
+**Key Pattern**: Activities and dialogue share the same choice infrastructure:
+
+```python
+# Activity choice format
+{
+    "text": "🥘 一起做料理",
+    "activity_id": "cooking_together",
+    "time_cost": 2,
+    "affection_change": 5
+}
+
+# Dialogue choice format
+{
+    "text": "我很喜歡和你一起度過時光",
+    "next_dialogue": "response_happy_01",
+    "affection_change": 3
+}
+```
+
 ### Debugging Tips
 
 - Enable `DebugSettings.DEBUG_MODE` for verbose output
 - Use scene debug info (F1) to monitor state changes
 - Check `logs/` directory for error tracking
-- Mouse coordinate transformation issues common in fullscreen mode
+- **Mouse coordinate transformation issues common in fullscreen mode**
+- Use `game_engine.transform_mouse_pos()` for accurate click detection
 
 ## Performance Considerations
 
@@ -157,5 +218,13 @@ game_state = {
 - Audio manager pools sound objects for repeated effects
 - Scene resources loaded once and cached
 - Debug rendering only active when flags enabled
+- **Choice system caches available activities per time period**
 
-Remember: This codebase prioritizes modularity and clean separation between game logic, presentation, and data management. When adding features, follow the established patterns of event-driven communication and system-specific responsibilities.
+## Critical Integration Points
+
+1. **Scene → UnifiedChoiceSystem**: `_interact_with_nyanko()` triggers dialogue which auto-enhances with activities
+2. **EventDrivenTimeSystem → Activities**: `get_available_activities()` filters by time period and requirements
+3. **Mouse Events → Fullscreen**: Always use `transform_mouse_pos()` before processing clicks
+4. **Character Data**: Loaded from `nyanko.py` with detailed personality and dialogue rules
+
+Remember: This codebase prioritizes unified player interaction through the choice system. When adding features, integrate with `UnifiedChoiceSystem` rather than creating separate UI flows. The event-driven time progression means all meaningful actions should cost time points and advance the narrative.

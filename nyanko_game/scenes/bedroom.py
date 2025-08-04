@@ -24,6 +24,9 @@ class BedroomScene(BaseScene):
 
         super().__init__(game_engine, scene_manager)
 
+        # 使用遊戲引擎的統一選擇系統
+        self.unified_choice_system = self.game_engine.unified_choice_system
+
     def load_resources(self):
         """載入場景資源"""
         # 建立字體（使用中文字體）
@@ -140,14 +143,22 @@ class BedroomScene(BaseScene):
         if self.nyanko_position:
             self._render_nyanko(screen)
 
-        # 繪製互動選項
-        self._render_interaction_options(screen)
+        # 不再顯示互動選項，因為已經整合到對話選擇中
+        # self._render_interaction_options(screen)
 
         # 操作提示
         screen_width, screen_height = self.get_screen_size()
-        hint_text = self.ui_font.render(
-            "方向鍵選擇，空白鍵確認，ESC返回", True, Colors.GRAY
-        )
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system.is_active
+        ):
+            # 對話進行中
+            hint_text = self.ui_font.render("對話進行中...", True, Colors.GRAY)
+        else:
+            # 提示點擊にゃんこ互動
+            hint_text = self.ui_font.render(
+                "點擊にゃんこ互動 | ESC: 返回客廳", True, Colors.GRAY
+            )
         screen.blit(hint_text, (20, screen_height - 30))
 
         # 繪製對話框（如果需要）
@@ -220,21 +231,122 @@ class BedroomScene(BaseScene):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.change_scene("living_room")
-            elif event.key == pygame.K_UP:
-                self.selected_option = (self.selected_option - 1) % len(
-                    self.interaction_options
-                )
-            elif event.key == pygame.K_DOWN:
-                self.selected_option = (self.selected_option + 1) % len(
-                    self.interaction_options
-                )
-            elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-                self._execute_interaction()
-            elif event.key >= pygame.K_1 and event.key <= pygame.K_9:
-                option_index = event.key - pygame.K_1
-                if option_index < len(self.interaction_options):
-                    self.selected_option = option_index
-                    self._execute_interaction()
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # 左鍵
+                # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
+                mouse_pos = getattr(event, "pos", self.get_mouse_pos())
+                self._handle_mouse_click(mouse_pos)
+
+    def _handle_mouse_click(self, mouse_pos: tuple):
+        """處理滑鼠點擊"""
+        # 檢查是否點擊了にゃんこ
+        if self.nyanko_position:
+            nyanko_rect = pygame.Rect(
+                self.nyanko_position[0] - 35, self.nyanko_position[1] - 35, 70, 70
+            )
+            if nyanko_rect.collidepoint(mouse_pos):
+                self._interact_with_nyanko()
+
+    def _interact_with_nyanko(self):
+        """與にゃんこ互動"""
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system.is_active
+        ):
+            print("對話進行中，請稍候...")
+            return
+
+        # 設定心情並觸發對話
+        self.nyanko_mood = "happy"
+
+        # 播放音效
+        if (
+            hasattr(self.game_engine, "audio_manager")
+            and self.game_engine.audio_manager is not None
+        ):
+            self.game_engine.audio_manager.play_sfx("nyanko_interact", 0.7)
+
+        # 根據時間段選擇適當的對話
+        time_info = self._get_current_time_info()
+        time_period = time_info.get("period_id", "morning")
+
+        # 使用臥室專用的對話ID
+        dialogue_id = f"bedroom_greeting_{time_period}_01"
+
+        # 如果找不到特定對話，使用通用臥室對話
+        if (
+            not hasattr(self.game_engine, "dialogue_system")
+            or dialogue_id not in self.game_engine.dialogue_system.dialogue_data
+        ):
+            dialogue_id = "bedroom_chat_01"
+
+        self.game_engine.start_dialogue(dialogue_id)
+
+    def _get_current_time_info(self):
+        """獲取當前時間資訊"""
+        if hasattr(self.game_engine, "get_current_time_info"):
+            time_info = self.game_engine.get_current_time_info()
+            if not time_info:
+                return {
+                    "period": "MORNING",
+                    "period_id": "morning",
+                    "day": 1,
+                    "time": "08:00",
+                    "time_points": 8,
+                }
+            return time_info
+        return {
+            "period": "MORNING",
+            "period_id": "morning",
+            "day": 1,
+            "time": "08:00",
+            "time_points": 8,
+        }
+
+    def update(self, dt: float, game_state: dict = None):
+        """更新場景邏輯"""
+        if self.paused:
+            return
+
+        if game_state:
+            self.current_game_state = game_state
+        else:
+            if hasattr(self.game_engine, "game_state"):
+                self.current_game_state = self.game_engine.game_state
+            else:
+                self.current_game_state = {}
+
+        # 更新對話系統
+        if (
+            hasattr(self.game_engine, "dialogue_system")
+            and self.game_engine.dialogue_system
+        ):
+            self.game_engine.dialogue_system.update(dt, self.current_game_state)
+
+        # 獲取時間資訊並更新にゃんこ狀態
+        time_info = self._get_current_time_info()
+        time_period = time_info.get("period_id", "morning")
+
+        # 根據時間段設定にゃんこ位置和心情
+        self._update_nyanko_by_time(time_period)
+
+    def _update_nyanko_by_time(self, time_period):
+        """根據時間段更新にゃんこ位置和心情"""
+        screen_width, screen_height = self.get_screen_size()
+
+        if time_period in ["night", "late_night"]:
+            # 晚上在床上
+            self.nyanko_position = (screen_width // 2, screen_height - 200)
+            self.nyanko_mood = "sleepy"
+        elif time_period == "morning":
+            # 早上在梳妝台附近
+            self.nyanko_position = (screen_width - 150, screen_height - 200)
+            self.nyanko_mood = "energetic"
+        else:
+            # 其他時間在房間中央
+            self.nyanko_position = (screen_width // 2 - 50, screen_height - 250)
+            self.nyanko_mood = "normal"
 
     def _execute_interaction(self):
         """執行選中的互動"""

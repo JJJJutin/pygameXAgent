@@ -5,7 +5,7 @@
         {
           "id": "greeting_early_morning_01",
           "speaker": "にゃんこ",
-          "text": "主人早安喵～人家剛剛起床，還有點迷迷糊糊的喵...(揉眼睛)",
+          "text": "主人早安～人家剛剛起床，還有點迷迷糊糊的喵...(揉眼睛)",
           "emotion": "sleepy",
           "choices": [
             {
@@ -25,7 +25,7 @@
         {
           "id": "greeting_morning_01",
           "speaker": "にゃんこ",
-          "text": "早安，主人喵～！昨晚睡得好嗎？人家已經準備好今天的活動了喵！",
+          "text": "早安，主人～！昨晚睡得好嗎？人家已經準備好今天的活動了喵！",
           "emotion": "cheerful",
           "choices": [
             {
@@ -48,7 +48,7 @@
         {
           "id": "greeting_morning_02",
           "speaker": "にゃんこ",
-          "text": "主人起床了喵～！人家已經準備好早餐了，想要什麼口味的喵？",
+          "text": "主人起床了～！人家已經準備好早餐了，想要什麼口味的喵？",
           "emotion": "caring",
           "conditions": {
             "affection_min": 20
@@ -331,7 +331,7 @@
         {
           "id": "bathing_together_01",
           "speaker": "にゃんこ",
-          "text": "主人...人家想和你一起洗澡喵～❤(臉紅)",
+          "text": "主人...人家想和你一起洗澡喵❤",
           "emotion": "embarrassed",
           "conditions": {
             "affection_min": 60,
@@ -371,7 +371,7 @@
         {
           "id": "morning_good_sleep",
           "speaker": "にゃんこ",
-          "text": "太好了喵～人家也睡得很好！夢到和主人一起玩呢喵～❤",
+          "text": "太好了喵～人家也睡得很好！夢到和主人一起玩呢喵～",
           "emotion": "cheerful",
           "next_dialogue": null
         },
@@ -385,7 +385,7 @@
         {
           "id": "morning_plans",
           "speaker": "にゃんこ",
-          "text": "嗯...人家想和主人一起做很多事情喵～！比如一起做早餐、打掃房間，或者只是靜靜地待在一起喵～❤",
+          "text": "嗯...人家想和主人一起做很多事情喵～！比如一起做早餐、打掃房間，或者只是靜靜地待在一起喵～",
           "emotion": "excited",
           "next_dialogue": null
         },
@@ -408,7 +408,7 @@
         {
           "id": "afternoon_tea_time",
           "speaker": "にゃんこ",
-          "text": "好的喵～人家馬上去泡茶！主人喜歡什麼口味的呢？人家的手藝可是很好的喵～❤",
+          "text": "好的喵～人家馬上去泡茶！主人喜歡什麼口味的呢？人家的手藝可是很好的喵～",
           "emotion": "caring",
           "next_dialogue": null
         },
@@ -422,7 +422,7 @@
         {
           "id": "afternoon_sunbathing",
           "speaker": "にゃんこ",
-          "text": "太好了喵～！人家最喜歡和主人一起曬太陽了！暖暖的陽光讓人想要撒嬌喵～❤",
+          "text": "太好了喵～！人家最喜歡和主人一起曬太陽了！暖暖的陽光讓人想要撒嬌喵～",
           "emotion": "content",
           "next_dialogue": null
         },
@@ -438,7 +438,7 @@
         {
           "id": "evening_tired_happy",
           "speaker": "にゃんこ",
-          "text": "主人...❤聽到你這麼說人家好開心喵～！讓人家幫你按摩一下肩膀吧喵！",
+          "text": "主人～聽到你這麼說人家好開心喵～！讓人家幫你按摩一下肩膀吧喵！",
           "emotion": "loving",
           "next_dialogue": null
         },
@@ -461,7 +461,7 @@
         {
           "id": "night_sleep_together",
           "speaker": "にゃんこ",
-          "text": "嗯...人家想和主人一起睡喵～❤(害羞地鑽進被窩)",
+          "text": "嗯...人家想和主人一起睡喵...❤(害羞地鑽進被窩)",
           "emotion": "shy",
           "next_dialogue": null
         },
@@ -607,21 +607,21 @@
         {
           "id": "cuddling_decline",
           "speaker": "にゃんこ",
-          "text": "嗯...人家知道了喵～（有點失落）那等主人有空的時候再抱抱吧喵...",
+          "text": "嗯...人家知道了喵...那等主人有空的時候再抱抱吧喵...",
           "emotion": "sad",
           "next_dialogue": null
         },
         {
           "id": "bathing_together_accept",
           "speaker": "にゃんこ",
-          "text": "真、真的可以嗎喵～？❤❤（臉紅得像蘋果）那...那人家去準備熱水喵～❤",
+          "text": "真、真的可以嗎喵～？❤❤ 那...那人家去準備熱水喵～❤",
           "emotion": "extremely_shy",
           "next_dialogue": null
         },
         {
           "id": "bathing_separate",
           "speaker": "にゃんこ",
-          "text": "嗯...人家明白喵～（雖然有點遺憾但理解）那人家先洗好了告訴主人喵！",
+          "text": "嗯...人家明白喵～ 那人家先洗好了告訴主人喵！",
           "emotion": "understanding",
           "next_dialogue": null
         }

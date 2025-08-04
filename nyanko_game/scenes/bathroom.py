@@ -24,6 +24,9 @@ class BathroomScene(BaseScene):
 
         super().__init__(game_engine, scene_manager)
 
+        # 使用遊戲引擎的統一選擇系統
+        self.unified_choice_system = self.game_engine.unified_choice_system
+
     def load_resources(self):
         """載入場景資源"""
         # 建立字體（使用中文字體）
