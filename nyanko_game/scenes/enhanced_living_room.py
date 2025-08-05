@@ -151,7 +151,7 @@ class EnhancedLivingRoomScene(BaseScene):
 
         # 自動隱藏活動結果
         if self.activity_result_display:
-            if pygame.time.get_ticks() - self.result_timer > 3000:
+            if pygame.time.get_ticks() - self.result_timer > 1500:
                 self.activity_result_display = False
 
     def render(self, screen: pygame.Surface):
@@ -592,6 +592,12 @@ class EnhancedLivingRoomScene(BaseScene):
 
     def handle_event(self, event: pygame.event.Event):
         """處理事件"""
+        # 活動結果顯示中 - 阻止所有互動
+        if self.activity_result_display:
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                self.activity_result_display = False
+            return  # 完全阻止其他事件處理
+
         # 對話系統優先處理（包含統一選擇系統）
         if (
             hasattr(self.game_engine, "dialogue_system")
@@ -602,12 +608,6 @@ class EnhancedLivingRoomScene(BaseScene):
             )
             if self.game_engine.dialogue_system.handle_event(event, game_state):
                 return
-
-        # 活動結果顯示中
-        if self.activity_result_display:
-            if event.type == pygame.KEYDOWN:
-                self.activity_result_display = False
-            return
 
         # 處理表情重置
         if event.type == pygame.USEREVENT + 1:
@@ -751,9 +751,9 @@ class EnhancedLivingRoomScene(BaseScene):
         if not self.activity_result_display:
             return
 
-        # 檢查顯示時間（顯示3秒）
+        # 檢查顯示時間（顯示1.5秒）
         current_time = pygame.time.get_ticks()
-        if current_time - self.result_timer > 3000:
+        if current_time - self.result_timer > 1500:
             self.activity_result_display = False
             return
 
