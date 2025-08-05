@@ -143,6 +143,10 @@ class UnifiedChoiceSystem:
         self.selected_choice = 0
         self.is_active = False
 
+        # 輸入延遲保護 - 防止立即響應觸發選項顯示的同一按鍵
+        self.choice_start_time = 0
+        self.input_delay = 0.05  # 選項顯示後的輸入延遲（秒）- 進一步減少延遲
+
         # UI相關
         self.choice_box_rect = None
         self.font = None
@@ -186,6 +190,8 @@ class UnifiedChoiceSystem:
             title: 選擇標題
             choice_type: 選擇類型
         """
+        print(f"🎯 準備顯示選擇選項: {len(choices)} 個原始選項, 類型: {choice_type}")
+
         self.choices = []
         game_state = getattr(self.game_engine, "game_state", {})
 
@@ -198,21 +204,33 @@ class UnifiedChoiceSystem:
                 current_time_points = time_system.game_time.time_points
                 game_state["time_points"] = current_time_points
 
-        for choice_data in choices:
+        for i, choice_data in enumerate(choices):
+            print(f"   處理選項 {i+1}: {choice_data.get('text', 'Unknown')}")
             # 對於 mixed 類型，讓 UnifiedChoice 自動檢測類型
             if choice_type == "mixed":
                 choice = UnifiedChoice(choice_data, "auto")
             else:
                 choice = UnifiedChoice(choice_data, choice_type)
+
             if choice.is_available(game_state):
                 self.choices.append(choice)
+                print(f"     ✅ 選項可用")
+            else:
+                print(f"     ❌ 選項不可用")
+
+        print(f"🎯 最終有效選項數量: {len(self.choices)}")
 
         if self.choices:
             self.selected_choice = 0
             self.is_active = True
             self.title = title
+            # 記錄選項顯示時間
+            import time
+
+            self.choice_start_time = time.time()
+            print(f"✅ 統一選擇系統已激活，標題: {title}")
         else:
-            print("沒有可用的選擇選項")
+            print("❌ 沒有可用的選擇選項")
 
     def show_dialogue_choices(
         self, dialogue_node: DialogueNode, game_state: Dict[str, Any]
@@ -461,28 +479,51 @@ class UnifiedChoiceSystem:
         if not self.is_active or not self.choices:
             return False
 
+        # 檢查輸入延遲 - 防止選項顯示後立即響應輸入
+        import time
+
+        current_time = time.time()
+        if current_time - self.choice_start_time < self.input_delay:
+            print(
+                f"⏳ 輸入延遲中，剩餘時間: {self.input_delay - (current_time - self.choice_start_time):.2f}秒"
+            )
+            return True  # 返回True表示已處理，防止事件傳遞給其他系統
+
         if event.type == pygame.KEYDOWN:
+            print(f"🎮 統一選擇系統收到按鍵事件: {pygame.key.name(event.key)}")
+
             if event.key == pygame.K_UP:
+                old_choice = self.selected_choice
                 self.selected_choice = (self.selected_choice - 1) % len(self.choices)
+                print(f"⬆️ 選擇向上: {old_choice} → {self.selected_choice}")
                 return True
 
             elif event.key == pygame.K_DOWN:
+                old_choice = self.selected_choice
                 self.selected_choice = (self.selected_choice + 1) % len(self.choices)
+                print(f"⬇️ 選擇向下: {old_choice} → {self.selected_choice}")
                 return True
 
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                print(
+                    f"✅ 執行選擇: {self.selected_choice} - {self.choices[self.selected_choice].text}"
+                )
                 self._execute_selected_choice()
                 return True
 
             elif event.key == pygame.K_ESCAPE:
+                print("❌ 取消選擇")
                 self._cancel_choice()
                 return True
+            else:
+                print(f"🎮 未處理的按鍵: {pygame.key.name(event.key)}")
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # 左鍵
                 mouse_pos = getattr(event, "pos", pygame.mouse.get_pos())
                 choice_index = self._get_clicked_choice(mouse_pos)
                 if choice_index is not None:
+                    print(f"🖱️ 滑鼠點擊選擇: {choice_index}")
                     self.selected_choice = choice_index
                     self._execute_selected_choice()
                     return True

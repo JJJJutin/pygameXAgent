@@ -453,7 +453,15 @@ class GameEngine:
                         event.type, {**event.dict, "pos": transformed_pos}
                     )
 
-                    # 優先讓對話系統處理事件
+                    # 優先讓統一選擇系統處理事件（優先級最高）
+                    if (
+                        self.unified_choice_system
+                        and self.unified_choice_system.is_active
+                    ):
+                        if self.unified_choice_system.handle_event(transformed_event):
+                            continue  # 統一選擇系統處理了事件，跳過其他處理
+
+                    # 對話系統事件處理（只在統一選擇系統非激活時）
                     if (
                         self.dialogue_system
                         and self.dialogue_system.is_dialogue_active()
@@ -463,29 +471,21 @@ class GameEngine:
                         ):
                             continue  # 對話系統處理了事件，跳過其他處理
 
-                    # 統一選擇系統事件處理
-                    if (
-                        self.unified_choice_system
-                        and self.unified_choice_system.is_active
-                    ):
-                        if self.unified_choice_system.handle_event(transformed_event):
-                            continue  # 統一選擇系統處理了事件，跳過其他處理
-
                     # 將轉換後的事件傳遞給場景管理器
                     if self.scene_manager:
                         self.scene_manager.handle_event(transformed_event)
                 # 如果點擊在遊戲區域外，忽略事件
                 continue
 
-            # 優先讓對話系統處理事件
-            if self.dialogue_system and self.dialogue_system.is_dialogue_active():
-                if self.dialogue_system.handle_event(event, self.game_state):
-                    continue  # 對話系統處理了事件，跳過其他處理
-
-            # 統一選擇系統事件處理
+            # 優先讓統一選擇系統處理事件（優先級最高）
             if self.unified_choice_system and self.unified_choice_system.is_active:
                 if self.unified_choice_system.handle_event(event):
                     continue  # 統一選擇系統處理了事件，跳過其他處理
+
+            # 對話系統事件處理（只在統一選擇系統非激活時）
+            if self.dialogue_system and self.dialogue_system.is_dialogue_active():
+                if self.dialogue_system.handle_event(event, self.game_state):
+                    continue  # 對話系統處理了事件，跳過其他處理
 
             elif event.type == pygame.KEYDOWN:
                 # 處理全域按鍵
@@ -896,9 +896,21 @@ class GameEngine:
         if not current_scene or current_scene.__class__.__name__ == "MainMenuScene":
             return
 
-        # 檢查對話系統是否已經激活
+        # 如果對話系統已經激活，讓對話系統處理空白鍵
         if self.dialogue_system and self.dialogue_system.is_dialogue_active():
-            print("對話已經在進行中...")
+            print("對話進行中，由對話系統處理空白鍵...")
+            # 創建一個模擬的空白鍵事件傳遞給對話系統
+            space_event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)
+            game_state = getattr(self, "game_state", {})
+            self.dialogue_system.handle_event(space_event, game_state)
+            return
+
+        # 檢查統一選擇系統是否激活
+        if self.unified_choice_system and self.unified_choice_system.is_active:
+            print("選擇系統激活中，由選擇系統處理空白鍵...")
+            # 創建一個模擬的空白鍵事件傳遞給統一選擇系統
+            space_event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)
+            self.unified_choice_system.handle_event(space_event)
             return
 
         # 檢查當前場景是否有にゃんこ

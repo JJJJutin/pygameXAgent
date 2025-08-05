@@ -96,7 +96,9 @@ class DialogueSystem:
         self.waiting_for_input = False
         self.auto_mode = False
         self.last_dialogue_end_time = 0  # 上次對話結束時間
-        self.dialogue_cooldown = 0.5  # 對話冷卻時間（秒）
+        self.dialogue_cooldown = 0.1  # 對話冷卻時間（秒）- 減少冷卻時間
+        self.dialogue_start_time = 0  # 對話開始時間
+        self.input_delay = 0.05  # 對話開始後的輸入延遲（秒）- 進一步減少延遲
 
         # 回調函數
         self.on_dialogue_end: Optional[Callable] = None
@@ -256,6 +258,9 @@ class DialogueSystem:
             print(f"警告: 找不到對話ID: {dialogue_id}")
             return False
 
+        # 記錄對話開始時間
+        self.dialogue_start_time = current_time
+
         self.current_dialogue = self.dialogue_data[dialogue_id]
         self.full_text = self.current_dialogue.text
         self.displayed_text = ""
@@ -321,6 +326,7 @@ class DialogueSystem:
 
         # 獲取對話選擇
         valid_choices = self.current_dialogue.get_valid_choices(game_state)
+        print(f"🗨️ 找到 {len(valid_choices)} 個有效對話選項")
 
         # 轉換為統一格式
         dialogue_choices = []
@@ -339,6 +345,7 @@ class DialogueSystem:
         enhanced_choices = self.unified_choice_system.add_contextual_choices(
             dialogue_choices
         )
+        print(f"🎯 增強後共有 {len(enhanced_choices)} 個選擇選項")
 
         if enhanced_choices:
             print(f"💭 顯示 {len(enhanced_choices)} 個選擇選項")
@@ -348,10 +355,12 @@ class DialogueSystem:
             )
             self.waiting_for_choice = True
             self.waiting_for_input = False
+            print("⏳ 等待玩家選擇...")
         else:
             # 如果沒有可用選擇，直接等待繼續輸入
             self.waiting_for_input = True
-            print("沒有可用的選擇選項，等待玩家繼續")
+            self.waiting_for_choice = False
+            print("❗ 沒有可用的選擇選項，等待玩家繼續")
 
     def _update_choice_buttons(self, game_state: Dict[str, Any]):
         """更新選擇按鈕"""
@@ -384,7 +393,28 @@ class DialogueSystem:
         if not self.is_active:
             return False
 
+        # 如果統一選擇系統正在等待玩家選擇，對話系統不處理事件
+        if (
+            self.waiting_for_choice
+            and self.unified_choice_system
+            and self.unified_choice_system.is_active
+        ):
+            print("🎯 統一選擇系統激活中，對話系統跳過事件處理")
+            return False
+
+        # 檢查輸入延遲 - 防止對話開始後立即響應輸入
+        import time
+
+        current_time = time.time()
+        if current_time - self.dialogue_start_time < self.input_delay:
+            print(
+                f"⏳ 對話輸入延遲中，剩餘時間: {self.input_delay - (current_time - self.dialogue_start_time):.2f}秒"
+            )
+            return True  # 返回True表示已處理，防止事件傳遞給其他系統
+
         if event.type == pygame.KEYDOWN:
+            print(f"💬 對話系統收到按鍵事件: {pygame.key.name(event.key)}")
+
             if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                 return self._handle_confirm_key(game_state)
 
@@ -403,6 +433,7 @@ class DialogueSystem:
                     return True
 
             elif event.key == pygame.K_ESCAPE:
+                print("❌ ESC - 結束對話")
                 self.end_dialogue()
                 return True
 
@@ -419,26 +450,38 @@ class DialogueSystem:
             self.text_complete = True
             self.displayed_text = self.full_text
             self.waiting_for_input = True
+            print("💬 文字顯示完成，等待玩家確認")
             return True
 
         # 文字已完成，檢查是否有選項需要顯示
         if self.text_complete and not self.waiting_for_choice:
             has_choices = self.current_dialogue.has_choices()
             if has_choices:
+                print("💭 檢測到對話選項，準備顯示選擇...")
                 # 顯示選項
                 if self.use_unified_choices and self.unified_choice_system:
+                    print("🎯 使用統一選擇系統顯示選項")
                     self._show_unified_choices(game_state)
                 else:
+                    print("📋 使用傳統選擇按鈕顯示選項")
                     self._update_choice_buttons(game_state)
                 return True
+            else:
+                print("⏭️ 無對話選項，準備繼續到下一個對話")
+                # 沒有選項，繼續下一個對話或結束
+                self._advance_dialogue(game_state)
+                return True
 
-        if self.choice_buttons:
-            # 選擇選項
+        if self.choice_buttons and not self.waiting_for_choice:
+            # 選擇選項（傳統模式）
+            print(f"✅ 處理傳統選擇: 選項 {self.selected_choice}")
             self.process_choice(self.selected_choice, game_state)
             return True
         else:
-            # 沒有選項，繼續下一個對話或結束
-            self._advance_dialogue(game_state)
+            # 統一選擇系統已激活，或者沒有選項，繼續下一個對話或結束
+            if not self.waiting_for_choice:
+                print("⏭️ 無選項可選，繼續到下一個對話")
+                self._advance_dialogue(game_state)
             return True
 
     def _handle_mouse_click(self, mouse_pos: tuple, game_state: Dict[str, Any]) -> bool:
@@ -631,11 +674,7 @@ class DialogueSystem:
             self._render_choice_buttons(screen)
 
         # 繪製繼續提示（文字完成後，且尚未顯示選項時）
-        elif (
-            self.text_complete
-            and not self.choice_buttons
-            and not self.waiting_for_choice
-        ):
+        elif self.text_complete and not self.waiting_for_choice:
             # 檢查是否有潛在的選項需要顯示
             has_choices = (
                 self.current_dialogue.has_choices() if self.current_dialogue else False
