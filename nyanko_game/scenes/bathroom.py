@@ -188,7 +188,7 @@ class BathroomScene(BaseScene):
             option_text = self.ui_font.render(f"{i+1}. {option['text']}", True, color)
             screen.blit(option_text, (option_x, option_y + i * 35))
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """處理事件"""
         # 首先讓對話系統處理事件
         if (
@@ -208,26 +208,33 @@ class BathroomScene(BaseScene):
 
             # 如果對話系統處理了事件，就不再繼續處理其他事件
             if self.game_engine.dialogue_system.handle_event(event, game_state):
-                return
+                return True
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.change_scene("living_room")
+                return True
             elif event.key == pygame.K_UP:
                 self.selected_option = (self.selected_option - 1) % len(
                     self.interaction_options
                 )
+                return True
             elif event.key == pygame.K_DOWN:
                 self.selected_option = (self.selected_option + 1) % len(
                     self.interaction_options
                 )
+                return True
             elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                 self._execute_interaction()
+                return True
             elif event.key >= pygame.K_1 and event.key <= pygame.K_9:
                 option_index = event.key - pygame.K_1
                 if option_index < len(self.interaction_options):
                     self.selected_option = option_index
                     self._execute_interaction()
+                return True
+
+        return False
 
     def _execute_interaction(self):
         """執行選中的互動"""

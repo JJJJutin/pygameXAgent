@@ -206,7 +206,7 @@ class BedroomScene(BaseScene):
             option_text = self.ui_font.render(f"{i+1}. {option['text']}", True, color)
             screen.blit(option_text, (option_x, option_y + i * 35))
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """處理事件"""
         # 首先讓對話系統處理事件
         if (
@@ -226,17 +226,21 @@ class BedroomScene(BaseScene):
 
             # 如果對話系統處理了事件，就不再繼續處理其他事件
             if self.game_engine.dialogue_system.handle_event(event, game_state):
-                return
+                return True
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.change_scene("living_room")
+                return True
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # 左鍵
                 # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
                 mouse_pos = getattr(event, "pos", self.get_mouse_pos())
                 self._handle_mouse_click(mouse_pos)
+                return True
+
+        return False
 
     def _handle_mouse_click(self, mouse_pos: tuple):
         """處理滑鼠點擊"""

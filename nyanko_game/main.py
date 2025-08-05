@@ -5,7 +5,7 @@
 """
 
 import sys
-import os1
+import os
 
 # 將當前目錄加入Python路徑
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

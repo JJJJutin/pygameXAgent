@@ -7,16 +7,20 @@
 import pygame
 from typing import Dict, Any
 from scenes.base_scene import BaseScene
+from scenes.activity_result_mixin import ActivityResultMixin
 from config.settings import *
 from systems.image_manager import image_manager
 from systems.game_ui import GameStatusUI
 
 
-class EnhancedLivingRoomScene(BaseScene):
+class EnhancedLivingRoomScene(BaseScene, ActivityResultMixin):
     """客廳場景類別 - 事件驅動版本"""
 
     def __init__(self, game_engine, scene_manager):
         """初始化客廳場景"""
+        # 初始化混入類別
+        ActivityResultMixin.__init__(self)
+
         self.background = None
         self.ui_font = None
         self.dialogue_font = None
@@ -31,9 +35,6 @@ class EnhancedLivingRoomScene(BaseScene):
         self.activity_menu_visible = False
         self.selected_activity = 0
         self.available_activities = []
-        self.activity_result_display = False
-        self.activity_result = {}
-        self.result_timer = 0
 
         # 場景相關設置
         self.weather_state = "normal"
@@ -149,11 +150,6 @@ class EnhancedLivingRoomScene(BaseScene):
         ):
             self.game_engine.dialogue_system.update(dt, self.current_game_state)
 
-        # 自動隱藏活動結果
-        if self.activity_result_display:
-            if pygame.time.get_ticks() - self.result_timer > 1500:
-                self.activity_result_display = False
-
     def render(self, screen: pygame.Surface):
         """渲染場景"""
         # 獲取當前時間資訊來選擇背景
@@ -195,8 +191,7 @@ class EnhancedLivingRoomScene(BaseScene):
         # if self.activity_menu_visible and ...
 
         # 繪製活動結果
-        if self.activity_result_display:
-            self._render_activity_result(screen)
+        self.render_activity_result(screen)
 
         # 繪製對話框
         if (
@@ -518,85 +513,11 @@ class EnhancedLivingRoomScene(BaseScene):
 
         screen.blit(menu_surface, (menu_x, menu_y))
 
-    def _render_activity_result(self, screen: pygame.Surface):
-        """渲染活動結果"""
-        screen_width, screen_height = self.get_screen_size()
-
-        # 半透明背景
-        overlay = pygame.Surface((screen_width, screen_height))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(128)
-        screen.blit(overlay, (0, 0))
-
-        # 結果框
-        result_width = 400
-        result_height = 200
-        result_x = (screen_width - result_width) // 2
-        result_y = (screen_height - result_height) // 2
-
-        result_surface = pygame.Surface((result_width, result_height))
-        result_surface.fill((255, 255, 255))
-        pygame.draw.rect(result_surface, (0, 150, 0), result_surface.get_rect(), 3)
-
-        # 結果內容
-        y_offset = 20
-
-        title_text = self.ui_font.render("活動完成！", True, (0, 150, 0))
-        title_rect = title_text.get_rect()
-        title_rect.centerx = result_width // 2
-        title_rect.y = y_offset
-        result_surface.blit(title_text, title_rect)
-
-        if self.activity_result:
-            y_offset += 50
-            activity_text = self.ui_font.render(
-                f"完成: {self.activity_result.get('name', '未知活動')}",
-                True,
-                (50, 50, 50),
-            )
-            activity_rect = activity_text.get_rect()
-            activity_rect.centerx = result_width // 2
-            activity_rect.y = y_offset
-            result_surface.blit(activity_text, activity_rect)
-
-            # 效果顯示
-            changes = self.activity_result.get("changes", {})
-            y_offset += 40
-            for stat, value in changes.items():
-                if value != 0:
-                    color = (0, 150, 0) if value > 0 else (200, 0, 0)
-                    change_text = f"{stat}: {value:+d}"
-                    try:
-                        change_font = pygame.font.Font(FontSettings.DEFAULT_FONT, 24)
-                    except (FileNotFoundError, OSError):
-                        change_font = self.ui_font
-                    change_surface = change_font.render(change_text, True, color)
-                    change_rect = change_surface.get_rect()
-                    change_rect.centerx = result_width // 2
-                    change_rect.y = y_offset
-                    result_surface.blit(change_surface, change_rect)
-                    y_offset += 25
-
-        # 提示
-        try:
-            hint_font = pygame.font.Font(FontSettings.DEFAULT_FONT, 20)
-        except (FileNotFoundError, OSError):
-            hint_font = self.ui_font
-        hint_text = hint_font.render("按任意鍵繼續...", True, (150, 150, 150))
-        hint_rect = hint_text.get_rect()
-        hint_rect.centerx = result_width // 2
-        hint_rect.y = result_height - 30
-        result_surface.blit(hint_text, hint_rect)
-
-        screen.blit(result_surface, (result_x, result_y))
-
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """處理事件"""
-        # 活動結果顯示中 - 阻止所有互動
-        if self.activity_result_display:
-            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                self.activity_result_display = False
-            return  # 完全阻止其他事件處理
+        # 先處理活動結果顯示相關事件
+        if self.handle_activity_result_event(event):
+            return True  # 如果事件被活動結果處理，則停止後續處理
 
         # 對話系統優先處理（包含統一選擇系統）
         if (
@@ -607,12 +528,13 @@ class EnhancedLivingRoomScene(BaseScene):
                 self, "current_game_state", getattr(self.game_engine, "game_state", {})
             )
             if self.game_engine.dialogue_system.handle_event(event, game_state):
-                return
+                return True
 
         # 處理表情重置
         if event.type == pygame.USEREVENT + 1:
             self.nyanko_mood = "normal"
             pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+            return True
 
         elif event.type == pygame.KEYDOWN:
             # 移除原有的活動選單快捷鍵，因為已經整合到對話中
@@ -623,20 +545,37 @@ class EnhancedLivingRoomScene(BaseScene):
                 # 跳過時間段
                 if hasattr(self.game_engine, "skip_time_period"):
                     self.game_engine.skip_time_period()
+                return True
             elif event.key == pygame.K_1:
                 self.change_scene("kitchen")
+                return True
             elif event.key == pygame.K_2:
                 self.change_scene("bedroom")
+                return True
             elif event.key == pygame.K_3:
                 self.change_scene("bathroom")
+                return True
             elif event.key == pygame.K_ESCAPE:
                 self.change_scene("main_menu")
+                return True
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
+                # 檢查是否在輸入延遲期間
+                current_time = pygame.time.get_ticks()
+                if current_time < self.input_delay_timer:
+                    print(
+                        f"⏳ 滑鼠點擊在輸入延遲期間被忽略，剩餘時間: {self.input_delay_timer - current_time}ms"
+                    )
+                    return True
+
                 # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
                 mouse_pos = getattr(event, "pos", self.get_mouse_pos())
                 self._handle_mouse_click(mouse_pos)
+                return True
+
+        # 如果沒有處理任何事件，返回 False
+        return False
 
     def _execute_selected_activity(self):
         """執行選中的活動"""
@@ -695,17 +634,30 @@ class EnhancedLivingRoomScene(BaseScene):
 
     def _on_activity_complete(self, activity, result):
         """活動完成回調"""
-        self.activity_result = {
-            "name": activity.name,
-            "description": activity.description,
-            "changes": {
-                "體力": result["energy_change"],
-                "好感度": result["affection_change"],
-                "心情": result["mood_change"],
-            },
+        # 使用混入類別的方法顯示活動結果
+        result_info = {
+            "activity_name": activity.name,
+            "energy_change": result["energy_change"],
+            "affection_change": result["affection_change"],
+            "mood_change": result["mood_change"],
+            "time_cost": getattr(activity, "time_cost", 0),
         }
-        self.activity_result_display = True
-        self.result_timer = pygame.time.get_ticks()
+        self.show_activity_result(result_info)
+
+        # 更新角色狀態顯示
+        if result_info.get("affection_change", 0) > 0:
+            self.nyanko_mood = "happy"
+
+        print(f"📋 活動結果: {result_info['activity_name']}")
+        for stat, change in [
+            ("體力", result_info.get("energy_change", 0)),
+            ("好感度", result_info.get("affection_change", 0)),
+            ("心情", result_info.get("mood_change", 0)),
+        ]:
+            if change != 0:
+                print(f"   {stat}: {change:+d}")
+        if result_info.get("time_cost", 0) > 0:
+            print(f"   消耗時間點數: {result_info['time_cost']}")
 
     def on_enter(self, transition_data=None):
         """場景進入時的回調"""
@@ -720,100 +672,3 @@ class EnhancedLivingRoomScene(BaseScene):
             self.activity_menu_visible = False
         else:
             self.change_scene("main_menu")
-
-    def show_activity_result(self, result_info: Dict[str, Any]):
-        """顯示活動結果"""
-        self.activity_result = {
-            "name": result_info["activity_name"],
-            "changes": {
-                "體力": result_info.get("energy_change", 0),
-                "好感度": result_info.get("affection_change", 0),
-                "心情": result_info.get("mood_change", 0),
-            },
-            "time_cost": result_info.get("time_cost", 0),
-        }
-        self.activity_result_display = True
-        self.result_timer = pygame.time.get_ticks()
-
-        # 更新角色狀態顯示
-        if result_info.get("affection_change", 0) > 0:
-            self.nyanko_mood = "happy"
-
-        print(f"📋 活動結果: {self.activity_result['name']}")
-        for stat, change in self.activity_result["changes"].items():
-            if change != 0:
-                print(f"   {stat}: {change:+d}")
-        if self.activity_result["time_cost"] > 0:
-            print(f"   消耗時間點數: {self.activity_result['time_cost']}")
-
-    def _render_activity_result(self, screen: pygame.Surface):
-        """渲染活動結果顯示"""
-        if not self.activity_result_display:
-            return
-
-        # 檢查顯示時間（顯示1.5秒）
-        current_time = pygame.time.get_ticks()
-        if current_time - self.result_timer > 1500:
-            self.activity_result_display = False
-            return
-
-        screen_width, screen_height = screen.get_size()
-
-        # 結果框大小和位置
-        result_width = 400
-        result_height = 200
-        result_x = (screen_width - result_width) // 2
-        result_y = (screen_height - result_height) // 2
-
-        # 半透明背景
-        overlay = pygame.Surface((screen_width, screen_height))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(128)
-        screen.blit(overlay, (0, 0))
-
-        # 結果框背景
-        result_surface = pygame.Surface((result_width, result_height))
-        result_surface.fill(Colors.WHITE)
-        pygame.draw.rect(
-            result_surface, Colors.PRIMARY_COLOR, result_surface.get_rect(), 3
-        )
-
-        # 標題
-        title_text = self.ui_font.render("活動完成", True, Colors.PRIMARY_COLOR)
-        title_rect = title_text.get_rect()
-        title_rect.centerx = result_width // 2
-        title_rect.y = 20
-        result_surface.blit(title_text, title_rect)
-
-        # 活動名稱
-        activity_text = self.ui_font.render(
-            self.activity_result["name"], True, Colors.DARK_GRAY
-        )
-        activity_rect = activity_text.get_rect()
-        activity_rect.centerx = result_width // 2
-        activity_rect.y = 60
-        result_surface.blit(activity_text, activity_rect)
-
-        # 變化詳情
-        y_offset = 100
-        for stat, change in self.activity_result["changes"].items():
-            if change != 0:
-                color = Colors.GREEN if change > 0 else Colors.RED
-                change_text = self.ui_font.render(f"{stat}: {change:+d}", True, color)
-                change_rect = change_text.get_rect()
-                change_rect.centerx = result_width // 2
-                change_rect.y = y_offset
-                result_surface.blit(change_text, change_rect)
-                y_offset += 25
-
-        # 時間消耗
-        if self.activity_result.get("time_cost", 0) > 0:
-            time_text = self.ui_font.render(
-                f"消耗時間點數: {self.activity_result['time_cost']}", True, Colors.BLUE
-            )
-            time_rect = time_text.get_rect()
-            time_rect.centerx = result_width // 2
-            time_rect.y = y_offset
-            result_surface.blit(time_text, time_rect)
-
-        screen.blit(result_surface, (result_x, result_y))

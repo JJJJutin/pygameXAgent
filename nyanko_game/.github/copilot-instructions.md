@@ -4,6 +4,8 @@
 
 This is a pygame-based visual novel/dating simulation game featuring the catgirl maid character "にゃんこ" (Nyan-ko). The codebase follows a modular, event-driven architecture with clean separation of concerns and a sophisticated unified choice system that seamlessly integrates dialogue, activities, and scene navigation.
 
+**Key Dependency**: Only requires `pygame>=2.0.0` - see `requirements.txt`
+
 ## Architecture Patterns
 
 ### Entry Point & Initialization
@@ -43,6 +45,7 @@ GameEngine
 - `DialogueSystem.set_unified_choice_system()` connects dialogue to unified choices
 - Scene-specific activities injected via `get_scene_activities(scene_name)`
 - Time management actions (skip time, continue chat) automatically added
+- **Input delay**: Configurable `input_delay` (default 0.05s) prevents immediate clicking after choice display
 
 ### Event-Driven Time System
 
@@ -98,6 +101,16 @@ if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTI
         transformed_event = pygame.event.Event(
             event.type, {**event.dict, "pos": transformed_pos}
         )
+```
+
+**Critical Pattern in Scenes**: All scenes must handle pre-transformed coordinates:
+
+```python
+# In scene event handlers - coordinates already transformed
+def handle_event(self, event: pygame.event.Event) -> bool:
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        # Use event.pos directly OR getattr(event, "pos", self.get_mouse_pos())
+        mouse_pos = getattr(event, "pos", self.get_mouse_pos())
 ```
 
 ### Pixel-Perfect Scaling
@@ -183,6 +196,7 @@ in_area = self.is_mouse_in_game_area()     # Within game bounds
 def handle_event(self, event):
     if event.type == pygame.MOUSEBUTTONDOWN:
         mouse_pos = event.pos  # Already transformed by GameEngine
+        # Alternative: mouse_pos = getattr(event, "pos", self.get_mouse_pos())
 ```
 
 ### Scene Navigation

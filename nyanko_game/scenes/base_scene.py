@@ -90,12 +90,15 @@ class BaseScene(ABC):
         pass
 
     @abstractmethod
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """
         處理事件（子類別必須實作）
 
         Args:
             event: pygame事件
+
+        Returns:
+            bool: 如果事件被處理則返回 True，否則返回 False
         """
         pass
 

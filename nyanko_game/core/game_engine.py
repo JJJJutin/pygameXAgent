@@ -12,7 +12,6 @@ from core.scene_manager import SceneManager
 from systems import DialogueSystem, AffectionSystem, EventSystem
 from systems.image_manager import image_manager
 from systems.daily_event_system import DailyEventSystem
-from systems.daily_event_system import DailyEventSystem
 from systems.progress_tracker import ProgressTracker
 
 
@@ -477,6 +476,13 @@ class GameEngine:
                 # 如果點擊在遊戲區域外，忽略事件
                 continue
 
+            # 優先讓場景處理事件，以便活動結果顯示等可以攔截事件
+            scene_handled = False
+            if self.scene_manager:
+                scene_handled = self.scene_manager.handle_event(event)
+                if scene_handled:
+                    continue  # 場景處理了事件，跳過其他處理
+
             # 優先讓統一選擇系統處理事件（優先級最高）
             if self.unified_choice_system and self.unified_choice_system.is_active:
                 if self.unified_choice_system.handle_event(event):
@@ -518,10 +524,6 @@ class GameEngine:
                 elif event.key == pygame.K_SPACE:
                     # 空白鍵處理 - 觸發與にゃんこ的對話
                     self._handle_space_key()
-
-            # 將事件傳遞給場景管理器
-            if self.scene_manager:
-                self.scene_manager.handle_event(event)
 
     def update(self):
         """更新遊戲邏輯"""

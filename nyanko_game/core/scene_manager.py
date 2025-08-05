@@ -122,15 +122,23 @@ class SceneManager:
         self.next_scene = None
         self.transition_data = {}
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """
         處理事件
 
         Args:
             event: pygame事件
+
+        Returns:
+            bool: 如果事件被處理則返回 True，否則返回 False
         """
         if self.current_scene:
-            self.current_scene.handle_event(event)
+            # 如果場景的 handle_event 有返回值，使用它；否則假設已處理
+            result = self.current_scene.handle_event(event)
+            if result is not None:
+                return result
+            return True  # 假設場景處理了事件
+        return False  # 沒有當前場景，事件未被處理
 
     def render(self, screen: pygame.Surface):
         """

@@ -196,26 +196,33 @@ class MainMenuScene(BaseScene):
         version_text = version_font.render(f"版本 {GAME_VERSION}", True, Colors.GRAY)
         screen.blit(version_text, (10, screen_height - 30))
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """處理事件"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self._navigate_menu(-1)
+                return True
             elif event.key == pygame.K_DOWN:
                 self._navigate_menu(1)
+                return True
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self._select_menu_item()
+                return True
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # 左鍵點擊
                 # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
                 mouse_pos = getattr(event, "pos", self.get_mouse_pos())
                 self._handle_mouse_click(mouse_pos)
+                return True
 
         elif event.type == pygame.MOUSEMOTION:
             # 使用事件中已轉換的座標或獲取轉換後的滑鼠位置
             mouse_pos = getattr(event, "pos", self.get_mouse_pos())
             self._handle_mouse_hover(mouse_pos)
+            return True
+
+        return False
 
     def _navigate_menu(self, direction: int):
         """
