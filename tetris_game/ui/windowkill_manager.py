@@ -65,7 +65,7 @@ class WindowKillManager:
             GRID_HEIGHT * CELL_SIZE + 60,  # 上下各約30像素邊距（原來100，現在60）
         )
         self.main_screen = pygame.display.set_mode(self.main_window_size)
-        pygame.display.set_caption("TETRIS WINDOW")
+        pygame.display.set_caption("TETRIS WINDOWS")
 
         # 設置遊戲圖示
         try:

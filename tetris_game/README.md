@@ -1,11 +1,12 @@
-# 俄羅斯方塊遊戲 (Tetris Game)
+# Tetris Windows 多視窗俄羅斯方塊遊戲
 
-一個使用 Python 和 Pygame 開發的完整俄羅斯方塊遊戲，採用模組化架構設計。
+一個使用 Python 和 Pygame 開發的完整多視窗俄羅斯方塊遊戲，採用模組化架構設計，具有 WindowKill 風格的多視窗系統。
 
 ## 特色功能
 
 ### 核心功能
 
+- **WindowKill 風格多視窗系統**：將遊戲分割成多個獨立視窗，可自由移動和排列
 - **SRS 旋轉系統**：標準的 Super Rotation System 和 Wall Kick
 - **7-bag 隨機器系統**：確保方塊分布的公平性
 - **Hold 功能**：可以儲存當前方塊供稍後使用
@@ -35,7 +36,7 @@
 ## 檔案結構
 
 ```
-tetris_game/
+tetris_windows/
 ├── main.py                 # 主程式執行檔
 ├── __init__.py            # 主模組初始化
 ├── config/                # 配置模組
@@ -51,7 +52,9 @@ tetris_game/
 │   └── grid.py            # 遊戲區域類別
 ├── ui/                    # 使用者介面模組
 │   ├── __init__.py
-│   └── renderer.py        # UI 渲染器
+│   ├── renderer.py        # UI 渲染器
+│   ├── windowkill_manager.py # WindowKill 風格視窗管理器
+│   └── window_manager.py  # 視窗管理工具
 └── utils/                 # 工具模組（預留）
 ```
 
@@ -132,8 +135,9 @@ tetris_game/
 
 ## 版本資訊
 
-- 版本：1.0.0
-- 開發者：Tetris Game Developer
+- 版本：2.0.0
+- 產品名稱：Tetris Windows
+- 開發者：Tetris Windows Developer
 - 授權：MIT License
 
 ## 未來計劃
