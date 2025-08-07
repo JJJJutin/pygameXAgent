@@ -13,6 +13,7 @@ from systems import DialogueSystem, AffectionSystem, EventSystem
 from systems.image_manager import image_manager
 from systems.daily_event_system import DailyEventSystem
 from systems.progress_tracker import ProgressTracker
+from systems.modern_display_manager import ModernDisplayManager
 
 
 class GameEngine:
@@ -26,14 +27,9 @@ class GameEngine:
         self.running = False
         self.dt = 0  # Delta time (時間差)
 
-        # 顯示相關
+        # 現代顯示管理器
+        self.display_manager = ModernDisplayManager(self)
         self.fullscreen_mode = FULLSCREEN_MODE
-
-        # 滑鼠座標轉換相關（用於全螢幕縮放模式）
-        self.mouse_scale_factor = 1.0
-        self.mouse_offset_x = 0
-        self.mouse_offset_y = 0
-        self.needs_mouse_transform = False
 
         # 遊戲狀態
         self.paused = False
@@ -73,7 +69,7 @@ class GameEngine:
             pygame.init()
             pygame.mixer.init()
 
-            # 設置顯示模式
+            # 設置顯示模式 - 使用現代顯示管理器
             self._setup_display()
 
             # 設置視窗標題和圖示
@@ -95,9 +91,21 @@ class GameEngine:
 
             if self.debug_mode:
                 print(f"遊戲引擎初始化完成")
-                print(f"遊戲解析度: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
-                display_size = self.screen.get_size()
-                print(f"實際顯示解析度: {display_size[0]}x{display_size[1]}")
+                display_info = self.display_manager.get_display_info()
+                print(
+                    f"遊戲解析度: {display_info['game_resolution'][0]}x{display_info['game_resolution'][1]}"
+                )
+                print(
+                    f"顯示解析度: {display_info['current_resolution'][0]}x{display_info['current_resolution'][1]}"
+                )
+                print(
+                    f"原生解析度: {display_info['native_resolution'][0]}x{display_info['native_resolution'][1]}"
+                )
+                print(
+                    f"縮放模式: {'啟用' if display_info['needs_scaling'] else '停用'}"
+                )
+                if display_info["needs_scaling"]:
+                    print(f"縮放比例: {display_info['scale_factor']:.3f}")
                 print(f"FPS目標: {FPS}")
                 mode_name = "全螢幕" if self.fullscreen_mode else "視窗"
                 print(f"顯示模式: {mode_name}")
@@ -108,120 +116,41 @@ class GameEngine:
             print(f"遊戲引擎初始化失敗: {e}")
             return False
 
-    def _get_screen_resolution(self):
-        """
-        獲取系統螢幕的真實解析度
-
-        Returns:
-            tuple: (width, height) 螢幕解析度
-        """
-        try:
-            # 方法1: 使用 tkinter（最可靠）
-            try:
-                import tkinter as tk
-
-                root = tk.Tk()
-                width = root.winfo_screenwidth()
-                height = root.winfo_screenheight()
-                root.destroy()
-                return (width, height)
-            except ImportError:
-                pass
-
-            # 方法2: Windows 特定方法
-            if sys.platform == "win32":
-                try:
-                    import ctypes
-
-                    user32 = ctypes.windll.user32
-                    width = user32.GetSystemMetrics(0)  # SM_CXSCREEN
-                    height = user32.GetSystemMetrics(1)  # SM_CYSCREEN
-                    return (width, height)
-                except:
-                    pass
-
-            # 方法3: pygame 方法（作為備用）
-            info = pygame.display.Info()
-            width = info.current_w
-            height = info.current_h
-            return (width, height)
-
-        except Exception as e:
-            if self.debug_mode:
-                print(f"無法獲取螢幕解析度: {e}")
-            # 返回遊戲預設解析度
-            return (SCREEN_WIDTH, SCREEN_HEIGHT)
-
     def _setup_display(self):
-        """改進的顯示設置 - 正確獲取原生解析度"""
-        if self.fullscreen_mode:
-            # 獲取真實螢幕解析度
-            native_width, native_height = self._get_screen_resolution()
+        """設置顯示 - 使用現代顯示管理器"""
+        self.screen = self.display_manager.initialize_display(self.fullscreen_mode)
 
-            # 檢查螢幕解析度是否與遊戲解析度相同
-            if native_width == SCREEN_WIDTH and native_height == SCREEN_HEIGHT:
-                # 解析度相同，直接使用全螢幕
-                self.screen = pygame.display.set_mode(
-                    (SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN
-                )
-                if self.debug_mode:
-                    print(f"全螢幕模式: {SCREEN_WIDTH}x{SCREEN_HEIGHT} (完美匹配)")
-            else:
-                # 解析度不同，使用原生解析度並後續縮放
-                self.screen = pygame.display.set_mode(
-                    (native_width, native_height), pygame.FULLSCREEN
-                )
-                if self.debug_mode:
-                    print(
-                        f"全螢幕模式: {native_width}x{native_height} (原生解析度，需要縮放)"
-                    )
-        else:
-            # 視窗模式
-            self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-            if self.debug_mode:
-                print(f"視窗模式: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+        if self.debug_mode:
+            display_info = self.display_manager.get_display_info()
+            print(f"顯示系統初始化:")
+            print(
+                f"  - 遊戲解析度: {display_info['game_resolution'][0]}x{display_info['game_resolution'][1]}"
+            )
+            print(
+                f"  - 顯示解析度: {display_info['current_resolution'][0]}x{display_info['current_resolution'][1]}"
+            )
+            print(
+                f"  - 原生解析度: {display_info['native_resolution'][0]}x{display_info['native_resolution'][1]}"
+            )
+            print(f"  - 全螢幕模式: {display_info['is_fullscreen']}")
+            print(f"  - 需要縮放: {display_info['needs_scaling']}")
+            if display_info["needs_scaling"]:
+                print(f"  - 縮放比例: {display_info['scale_factor']:.3f}")
+                print(f"  - 偏移量: {display_info['offset']}")
 
-        # 更新滑鼠轉換參數
-        self._update_mouse_transform_params()
+    def _get_screen_resolution(self):
+        """獲取系統螢幕的真實解析度 - 使用顯示管理器"""
+        return self.display_manager._get_native_resolution()
 
     def _update_mouse_transform_params(self):
-        """更新滑鼠座標轉換參數"""
-        if self.fullscreen_mode:
-            screen_width, screen_height = self.screen.get_size()
-
-            if screen_width == SCREEN_WIDTH and screen_height == SCREEN_HEIGHT:
-                # 解析度匹配，無需轉換
-                self.needs_mouse_transform = False
-                self.mouse_scale_factor = 1.0
-                self.mouse_offset_x = 0
-                self.mouse_offset_y = 0
-            else:
-                # 需要縮放轉換
-                scale_x = screen_width / SCREEN_WIDTH
-                scale_y = screen_height / SCREEN_HEIGHT
-                scale = min(scale_x, scale_y)
-
-                scaled_width = int(SCREEN_WIDTH * scale)
-                scaled_height = int(SCREEN_HEIGHT * scale)
-
-                self.needs_mouse_transform = True
-                self.mouse_scale_factor = scale
-                self.mouse_offset_x = (screen_width - scaled_width) // 2
-                self.mouse_offset_y = (screen_height - scaled_height) // 2
-        else:
-            # 視窗模式，無需轉換
-            self.needs_mouse_transform = False
-            self.mouse_scale_factor = 1.0
-            self.mouse_offset_x = 0
-            self.mouse_offset_y = 0
+        """更新滑鼠座標轉換參數 - 由顯示管理器處理"""
+        # 此方法保留相容性，實際轉換由顯示管理器處理
+        pass
 
     def _calculate_scaling(self, display_width: int, display_height: int):
-        """計算縮放比例和渲染偏移 - 已簡化，保留以維持相容性"""
-        # 這個方法保留以維持相容性
-        if self.debug_mode:
-            print(f"顯示解析度: {display_width}x{display_height}")
-            print(f"遊戲解析度: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
-            print("使用簡化的顯示處理")
+        """計算縮放比例和渲染偏移 - 由顯示管理器處理"""
+        # 此方法保留相容性，實際縮放由顯示管理器處理
+        pass
 
     def _initialize_systems(self):
         """初始化核心系統"""
@@ -385,7 +314,7 @@ class GameEngine:
 
     def transform_mouse_pos(self, mouse_pos: tuple) -> tuple:
         """
-        轉換滑鼠座標從實際螢幕座標到遊戲虛擬座標
+        轉換滑鼠座標從實際螢幕座標到遊戲虛擬座標 - 使用顯示管理器
 
         Args:
             mouse_pos: 實際螢幕滑鼠位置 (x, y)
@@ -393,35 +322,11 @@ class GameEngine:
         Returns:
             tuple: 轉換後的遊戲座標 (x, y)，如果點擊在遊戲區域外則返回 None
         """
-        if not self.needs_mouse_transform:
-            return mouse_pos
-
-        # 將滑鼠座標轉換為遊戲座標
-        screen_x, screen_y = mouse_pos
-
-        # 減去偏移量
-        game_x = screen_x - self.mouse_offset_x
-        game_y = screen_y - self.mouse_offset_y
-
-        # 縮放到遊戲座標
-        if self.mouse_scale_factor > 0:
-            game_x = int(game_x / self.mouse_scale_factor)
-            game_y = int(game_y / self.mouse_scale_factor)
-
-        # 檢查是否在遊戲區域內
-        if (
-            game_x < 0
-            or game_x >= SCREEN_WIDTH
-            or game_y < 0
-            or game_y >= SCREEN_HEIGHT
-        ):
-            return None  # 點擊在遊戲區域外
-
-        return (game_x, game_y)
+        return self.display_manager.transform_mouse_position(mouse_pos)
 
     def is_mouse_in_game_area(self, mouse_pos: tuple) -> bool:
         """
-        檢查滑鼠是否在遊戲區域內
+        檢查滑鼠是否在遊戲區域內 - 使用顯示管理器
 
         Args:
             mouse_pos: 滑鼠位置 (x, y)
@@ -429,8 +334,7 @@ class GameEngine:
         Returns:
             bool: 是否在遊戲區域內
         """
-        transformed_pos = self.transform_mouse_pos(mouse_pos)
-        return transformed_pos is not None
+        return self.display_manager.is_position_in_game_area(mouse_pos)
 
     def handle_events(self):
         """處理輸入事件"""
@@ -512,6 +416,13 @@ class GameEngine:
                         "開啟" if ImageScaling.USE_PIXEL_PERFECT_SCALING else "關閉"
                     )
                     print(f"像素完整縮放: {mode_text}")
+                elif event.key == pygame.K_F3 and self.debug_mode:
+                    # 顯示詳細解析度資訊
+                    self._print_display_info()
+                elif event.key == pygame.K_F4 and self.debug_mode:
+                    # 自動調整到最佳解析度（僅視窗模式）
+                    if not self.fullscreen_mode:
+                        self._auto_adjust_resolution()
                 elif event.key == pygame.K_ESCAPE:
                     # ESC鍵處理
                     if self.scene_manager.current_scene:
@@ -586,108 +497,31 @@ class GameEngine:
             self.scene_manager.update(self.dt, self.game_state)
 
     def render(self):
-        """智能渲染畫面 - 根據解析度匹配情況選擇最佳渲染方式"""
-        if self.fullscreen_mode:
-            screen_width, screen_height = self.screen.get_size()
+        """現代化渲染系統 - 使用顯示管理器"""
 
-            # 檢查是否需要縮放
-            if screen_width == SCREEN_WIDTH and screen_height == SCREEN_HEIGHT:
-                # 解析度完全匹配，直接渲染（最高效率）
-                self.needs_mouse_transform = False
-                self.mouse_scale_factor = 1.0
-                self.mouse_offset_x = 0
-                self.mouse_offset_y = 0
-
-                self.screen.fill(Colors.BACKGROUND_COLOR)
-
-                if self.scene_manager:
-                    self.scene_manager.render(self.screen)
-
-                if self.dialogue_system:
-                    self.dialogue_system.render(self.screen)
-
-                # 渲染統一選擇系統
-                if self.unified_choice_system:
-                    self.unified_choice_system.render(self.screen)
-
-                if self.debug_mode:
-                    self.render_debug_info()
-
-            else:
-                # 需要縮放渲染
-                virtual_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-                virtual_surface.fill(Colors.BACKGROUND_COLOR)
-
-                # 在虛擬表面上渲染
-                if self.scene_manager:
-                    self.scene_manager.render(virtual_surface)
-
-                if self.dialogue_system:
-                    self.dialogue_system.render(virtual_surface)
-
-                # 渲染統一選擇系統
-                if self.unified_choice_system:
-                    self.unified_choice_system.render(virtual_surface)
-
-                if self.debug_mode:
-                    self._render_debug_info_on_surface(virtual_surface)
-
-                # 計算縮放比例和位置
-                scale_x = screen_width / SCREEN_WIDTH
-                scale_y = screen_height / SCREEN_HEIGHT
-                scale = min(scale_x, scale_y)  # 保持比例
-
-                scaled_width = int(SCREEN_WIDTH * scale)
-                scaled_height = int(SCREEN_HEIGHT * scale)
-
-                # 縮放虛擬表面 - 使用像素完整縮放
-                from config.settings import ImageScaling
-
-                scaled_surface = ImageScaling.pixel_perfect_scale(
-                    virtual_surface, (scaled_width, scaled_height)
-                )
-
-                # 居中顯示
-                x = (screen_width - scaled_width) // 2
-                y = (screen_height - scaled_height) // 2
-
-                # 設置滑鼠座標轉換參數
-                self.needs_mouse_transform = True
-                self.mouse_scale_factor = scale
-                self.mouse_offset_x = x
-                self.mouse_offset_y = y
-
-                # 清空實際螢幕並繪製縮放後的內容
-                self.screen.fill(Colors.BLACK)  # 黑色邊框
-                self.screen.blit(scaled_surface, (x, y))
-
-        else:
-            # 視窗模式：直接渲染
-            self.needs_mouse_transform = False
-            self.mouse_scale_factor = 1.0
-            self.mouse_offset_x = 0
-            self.mouse_offset_y = 0
-
-            self.screen.fill(Colors.BACKGROUND_COLOR)
-
+        def render_game_content(surface):
+            """遊戲內容渲染回調"""
             if self.scene_manager:
-                self.scene_manager.render(self.screen)
+                self.scene_manager.render(surface)
 
             if self.dialogue_system:
-                self.dialogue_system.render(self.screen)
+                self.dialogue_system.render(surface)
 
             # 渲染統一選擇系統
             if self.unified_choice_system:
-                self.unified_choice_system.render(self.screen)
+                self.unified_choice_system.render(surface)
 
             if self.debug_mode:
-                self.render_debug_info()
+                self._render_debug_info_on_surface(surface)
+
+        # 使用顯示管理器渲染
+        self.display_manager.render_frame(self.screen, render_game_content)
 
         # 更新顯示
         pygame.display.flip()
 
     def _render_debug_info_on_surface(self, surface):
-        """在指定表面上渲染除錯資訊"""
+        """在指定表面上渲染除錯資訊 - 現代版本"""
         if DebugSettings.SHOW_FPS:
             fps = self.clock.get_fps()
             try:
@@ -695,62 +529,98 @@ class GameEngine:
             except (FileNotFoundError, OSError):
                 font = pygame.font.Font(None, 24)
 
+            y_offset = 10
+            line_height = 25
+
             # FPS資訊
             fps_text = font.render(f"FPS: {fps:.1f}", True, Colors.BLACK)
-            surface.blit(fps_text, (10, 10))
+            surface.blit(fps_text, (10, y_offset))
+            y_offset += line_height
 
             # 場景資訊
             if self.scene_manager and self.scene_manager.current_scene:
                 scene_name = self.scene_manager.current_scene.__class__.__name__
                 scene_text = font.render(f"Scene: {scene_name}", True, Colors.BLACK)
-                surface.blit(scene_text, (10, 35))
+                surface.blit(scene_text, (10, y_offset))
+                y_offset += line_height
 
-            # 顯示模式和解析度資訊
-            mode_name = "全螢幕" if self.fullscreen_mode else "視窗"
+            # 顯示資訊
+            display_info = self.display_manager.get_display_info()
+
+            mode_name = "全螢幕" if display_info["is_fullscreen"] else "視窗"
             mode_text = font.render(f"Mode: {mode_name}", True, Colors.BLACK)
-            surface.blit(mode_text, (10, 60))
+            surface.blit(mode_text, (10, y_offset))
+            y_offset += line_height
 
-            if self.fullscreen_mode:
-                screen_size = self.screen.get_size()
-                native_text = font.render(
-                    f"Native: {screen_size[0]}x{screen_size[1]}", True, Colors.BLACK
+            # 解析度資訊
+            game_res = display_info["game_resolution"]
+            current_res = display_info["current_resolution"]
+            native_res = display_info["native_resolution"]
+
+            game_text = font.render(
+                f"Game: {game_res[0]}x{game_res[1]}", True, Colors.BLACK
+            )
+            surface.blit(game_text, (10, y_offset))
+            y_offset += line_height
+
+            current_text = font.render(
+                f"Display: {current_res[0]}x{current_res[1]}", True, Colors.BLACK
+            )
+            surface.blit(current_text, (10, y_offset))
+            y_offset += line_height
+
+            native_text = font.render(
+                f"Native: {native_res[0]}x{native_res[1]}", True, Colors.BLACK
+            )
+            surface.blit(native_text, (10, y_offset))
+            y_offset += line_height
+
+            # 縮放狀態
+            if display_info["needs_scaling"]:
+                scale_text = font.render(
+                    f"Scale: {display_info['scale_factor']:.3f}", True, Colors.BLACK
                 )
-                surface.blit(native_text, (10, 85))
+                surface.blit(scale_text, (10, y_offset))
+                y_offset += line_height
 
-                game_text = font.render(
-                    f"Game: {SCREEN_WIDTH}x{SCREEN_HEIGHT}", True, Colors.BLACK
+                offset = display_info["offset"]
+                offset_text = font.render(
+                    f"Offset: ({offset[0]}, {offset[1]})", True, Colors.BLACK
                 )
-                surface.blit(game_text, (10, 110))
-
-                scale_text = font.render("Status: Scaling Active", True, Colors.BLACK)
-                surface.blit(scale_text, (10, 135))
+                surface.blit(offset_text, (10, y_offset))
+                y_offset += line_height
+            else:
+                no_scale_text = font.render(
+                    "Scale: None (Perfect Match)", True, Colors.BLACK
+                )
+                surface.blit(no_scale_text, (10, y_offset))
+                y_offset += line_height
 
             # 像素完整縮放狀態
-            from config.settings import ImageScaling
-
             pixel_mode = "ON" if ImageScaling.USE_PIXEL_PERFECT_SCALING else "OFF"
             pixel_text = font.render(f"Pixel Perfect: {pixel_mode}", True, Colors.BLACK)
-            surface.blit(pixel_text, (10, 160))
+            surface.blit(pixel_text, (10, y_offset))
+            y_offset += line_height
 
-            # 滑鼠座標轉換狀態
-            if self.needs_mouse_transform:
-                transform_text = font.render("Mouse Transform: ON", True, Colors.BLACK)
-                surface.blit(transform_text, (10, 185))
-
-                # 顯示滑鼠座標
-                raw_mouse = pygame.mouse.get_pos()
-                game_mouse = self.get_mouse_pos()
+            # 滑鼠座標
+            raw_mouse = pygame.mouse.get_pos()
+            game_mouse = self.get_mouse_pos()
+            if game_mouse != (-1, -1):
                 mouse_info = font.render(
                     f"Mouse: {raw_mouse} -> {game_mouse}", True, Colors.BLACK
                 )
-                surface.blit(mouse_info, (10, 210))
             else:
-                transform_text = font.render("Mouse Transform: OFF", True, Colors.BLACK)
-                surface.blit(transform_text, (10, 185))
+                mouse_info = font.render(
+                    f"Mouse: {raw_mouse} -> Outside", True, Colors.BLACK
+                )
+            surface.blit(mouse_info, (10, y_offset))
+            y_offset += line_height
 
             # 控制提示
-            controls_text = font.render("F2: Toggle Pixel Perfect", True, Colors.GRAY)
-            surface.blit(controls_text, (10, 235))
+            controls_text = font.render(
+                "F2: Toggle Pixel Perfect | F3: Resolution Info", True, Colors.GRAY
+            )
+            surface.blit(controls_text, (10, y_offset))
 
     def render_debug_info(self):
         """簡化的除錯資訊渲染"""
@@ -872,18 +742,67 @@ class GameEngine:
         return False
 
     def toggle_fullscreen(self):
-        """簡化的全螢幕切換"""
+        """切換全螢幕模式 - 使用現代顯示管理器"""
         self.fullscreen_mode = not self.fullscreen_mode
-        self._setup_display()
+        self.screen = self.display_manager.toggle_fullscreen(self.screen)
 
         if self.debug_mode:
+            display_info = self.display_manager.get_display_info()
             mode_name = "全螢幕" if self.fullscreen_mode else "視窗"
-            transform_status = "ON" if self.needs_mouse_transform else "OFF"
-            print(f"切換到{mode_name}模式，滑鼠轉換: {transform_status}")
-            if self.needs_mouse_transform:
-                print(
-                    f"縮放比例: {self.mouse_scale_factor:.3f}, 偏移: ({self.mouse_offset_x}, {self.mouse_offset_y})"
-                )
+            print(f"切換到{mode_name}模式")
+            print(
+                f"顯示解析度: {display_info['current_resolution'][0]}x{display_info['current_resolution'][1]}"
+            )
+            print(f"縮放模式: {'啟用' if display_info['needs_scaling'] else '停用'}")
+            if display_info["needs_scaling"]:
+                print(f"縮放比例: {display_info['scale_factor']:.3f}")
+                print(f"偏移量: {display_info['offset']}")
+
+    def _print_display_info(self):
+        """打印詳細的顯示資訊"""
+        display_info = self.display_manager.get_display_info()
+        print("\n=== 顯示系統資訊 ===")
+        print(
+            f"遊戲解析度: {display_info['game_resolution'][0]}x{display_info['game_resolution'][1]}"
+        )
+        print(
+            f"當前顯示解析度: {display_info['current_resolution'][0]}x{display_info['current_resolution'][1]}"
+        )
+        print(
+            f"系統原生解析度: {display_info['native_resolution'][0]}x{display_info['native_resolution'][1]}"
+        )
+        print(f"全螢幕模式: {display_info['is_fullscreen']}")
+        print(f"需要縮放: {display_info['needs_scaling']}")
+        if display_info["needs_scaling"]:
+            print(f"縮放比例: {display_info['scale_factor']:.3f}")
+            print(f"偏移量: {display_info['offset']}")
+        print(
+            f"像素完整縮放: {'啟用' if ImageScaling.USE_PIXEL_PERFECT_SCALING else '停用'}"
+        )
+
+        # 顯示建議解析度
+        recommended = self.display_manager.get_recommended_resolution()
+        print(f"建議解析度: {recommended[0]}x{recommended[1]}")
+
+        # 顯示支援的解析度
+        print(f"支援的解析度數量: {len(display_info['supported_resolutions'])}")
+        print("前5個支援的解析度:")
+        for i, res in enumerate(display_info["supported_resolutions"][:5]):
+            print(f"  {i+1}. {res[0]}x{res[1]}")
+        print("===================\n")
+
+    def _auto_adjust_resolution(self):
+        """自動調整到最佳解析度"""
+        if self.fullscreen_mode:
+            print("全螢幕模式下無法調整解析度")
+            return
+
+        try:
+            recommended = self.display_manager.auto_adjust_resolution()
+            self.screen = self.display_manager.initialize_display(False)
+            print(f"解析度已自動調整為: {recommended[0]}x{recommended[1]}")
+        except Exception as e:
+            print(f"自動調整解析度失敗: {e}")
 
     def toggle_pause(self):
         """切換暫停狀態"""

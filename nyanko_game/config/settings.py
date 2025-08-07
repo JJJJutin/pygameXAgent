@@ -10,11 +10,41 @@ import pygame
 GAME_TITLE = "にゃんこと一緒 ～貓娘女僕的同居日常～"
 GAME_VERSION = "1.0.0"
 
-# 視窗設定
-SCREEN_WIDTH = 1280  # 視窗寬度
-SCREEN_HEIGHT = 720  # 視窗高度
+# 視窗設定 - 現代Full HD標準
+SCREEN_WIDTH = 1920  # 視窗寬度 (Full HD)
+SCREEN_HEIGHT = 1080  # 視窗高度 (Full HD)
 FPS = 60
 FULLSCREEN_MODE = False  # 預設視窗模式
+
+
+# 顯示模式設定
+class DisplayModes:
+    # 支援的解析度 (寬度, 高度, 名稱)
+    SUPPORTED_RESOLUTIONS = [
+        (1920, 1080, "Full HD (1920x1080)"),
+        (1680, 1050, "WSXGA+ (1680x1050)"),
+        (1600, 900, "HD+ (1600x900)"),
+        (1440, 900, "WXGA+ (1440x900)"),
+        (1366, 768, "WXGA (1366x768)"),
+        (1280, 720, "HD Ready (1280x720)"),
+        (1024, 768, "XGA (1024x768)"),
+    ]
+
+    # 偏好的解析度（按優先級排序）
+    PREFERRED_RESOLUTIONS = [
+        (1920, 1080),  # Full HD - 現代標準
+        (1680, 1050),  # 16:10 寬螢幕
+        (1600, 900),  # 16:9 緊湊型
+        (1366, 768),  # 筆電標準
+        (1280, 720),  # 舊HD標準
+    ]
+
+    # 最小支援解析度
+    MIN_WIDTH = 1280
+    MIN_HEIGHT = 720
+
+    # 自動縮放臨界值
+    AUTO_SCALE_THRESHOLD = 0.8  # 當螢幕小於遊戲解析度的80%時自動縮放
 
 
 # 顏色定義 (RGB)
@@ -119,20 +149,26 @@ class GameSettings:
 
 # 圖片縮放設定
 class ImageScaling:
-    # 背景圖片原始解析度
-    BACKGROUND_ORIGINAL_WIDTH = 480
-    BACKGROUND_ORIGINAL_HEIGHT = 270
+    # 背景圖片原始解析度 (更新為現代Full HD)
+    BACKGROUND_ORIGINAL_WIDTH = 1920
+    BACKGROUND_ORIGINAL_HEIGHT = 1080
 
     # 人物立繪原始解析度
     CHARACTER_ORIGINAL_WIDTH = 170
     CHARACTER_ORIGINAL_HEIGHT = 283
 
     # 相對於背景的人物立繪縮放比例
-    CHARACTER_TO_BACKGROUND_RATIO = 1  # 人物立繪高度為背景高度的1.0倍
+    CHARACTER_TO_BACKGROUND_RATIO = 1.0  # 人物立繪高度為背景高度的1.0倍
 
     # 像素完整縮放設定
     USE_PIXEL_PERFECT_SCALING = True  # 是否使用像素完整縮放
     PIXEL_PERFECT_FILTER = True  # 是否在像素完整縮放時使用最近鄰過濾
+
+    # 多解析度支援設定
+    ENABLE_MULTI_RESOLUTION = True  # 啟用多解析度支援
+    AUTO_DETECT_RESOLUTION = True  # 自動偵測最佳解析度
+    MAINTAIN_ASPECT_RATIO = True  # 保持縱橫比
+    CENTER_ON_MISMATCH = True  # 解析度不匹配時居中顯示
 
     @staticmethod
     def calculate_character_size(background_width, background_height):

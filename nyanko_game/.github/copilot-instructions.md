@@ -5,6 +5,7 @@
 This is a pygame-based visual novel/dating simulation game featuring the catgirl maid character "にゃんこ" (Nyan-ko). The codebase follows a modular, event-driven architecture with clean separation of concerns and a sophisticated unified choice system that seamlessly integrates dialogue, activities, and scene navigation.
 
 **Key Dependency**: Only requires `pygame>=2.0.0` - see `requirements.txt`
+**Recent State**: Recently cleaned up from 50+ legacy files to a streamlined 69-file structure (see `CLEANUP_SUMMARY.md`)
 
 ## Architecture Patterns
 
@@ -123,9 +124,11 @@ def handle_event(self, event: pygame.event.Event) -> bool:
 
 ### Running & Debugging
 
-```bash
-python main.py                              # Standard execution
+```powershell
+python main.py                                # Standard execution
 python scripts/test_pixel_perfect_scaling.py  # Visual scaling test
+python scripts/test_modern_display.py         # Display system test
+python tests/test_unified_choice_system.py    # Unit tests
 ```
 
 **Debug Keys** (when `DebugSettings.DEBUG_MODE = True`):
@@ -135,6 +138,8 @@ python scripts/test_pixel_perfect_scaling.py  # Visual scaling test
 - **F11**: Fullscreen toggle
 - **Space**: Trigger dialogue with にゃんこ (in game scenes)
 - **ESC**: Scene-specific handling or pause
+
+**Test Patterns**: Use `MockGameEngine` and `MockActivity` classes for isolated system testing (see `tests/test_unified_choice_system.py`)
 
 ### Character Implementation
 
@@ -255,3 +260,35 @@ enhanced_choices = self.unified_choice_system.add_contextual_choices(base_choice
 4. **Event Priority**: `UnifiedChoiceSystem` → `DialogueSystem` → `SceneManager` (handle events in this order)
 
 **Remember**: This codebase prioritizes unified player interaction. New features should integrate with the existing choice system rather than creating separate interaction flows. The event-driven time system means player agency drives all progression.
+
+## Development Setup & Maintenance
+
+### Environment Setup
+
+```powershell
+# Install dependencies
+pip install pygame
+
+# Run game (main execution path)
+python main.py
+
+# Run specific tests
+python scripts/test_pixel_perfect_scaling.py
+python tests/test_unified_choice_system.py
+```
+
+### File Organization Principles
+
+- **Root files**: `main.py` (entry), `nyanko.py` (character behavior), `requirements.txt`
+- **Core systems**: `core/game_engine.py` (main engine), `core/scene_manager.py`
+- **Modular systems**: `systems/` directory - each system is self-contained
+- **Scene hierarchy**: All scenes inherit from `scenes/base_scene.py`
+- **Configuration**: `config/settings.py` with class-based organization
+- **Assets**: Organized by type in `assets/` (images, sounds, fonts, data)
+
+### Maintenance Notes
+
+- **Cache cleanup**: Python `__pycache__` directories regenerate - clean regularly
+- **Asset management**: `systems/image_manager.py` handles caching automatically
+- **Debug tools**: Keep debug scripts in `scripts/` directory
+- **Testing**: Use mock classes pattern from `tests/test_unified_choice_system.py`

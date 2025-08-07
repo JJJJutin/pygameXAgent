@@ -68,34 +68,65 @@ class EnhancedLivingRoomScene(BaseScene, ActivityResultMixin):
             self.ui_font = pygame.font.Font(None, FontSettings.FONT_SIZE_MEDIUM)
             self.dialogue_font = pygame.font.Font(None, FontSettings.DIALOGUE_FONT_SIZE)
 
-        # 載入背景圖片
-        self.background_morning = image_manager.get_image("bg_livingroom_morning")
-        self.background_evening = image_manager.get_image("bg_livingroom_evening")
+        # 載入所有時間段的背景圖片
+        self.backgrounds = {
+            "early_morning": image_manager.get_image("bg_livingroom_early_morning"),
+            "morning": image_manager.get_image("bg_livingroom_morning"),
+            "afternoon": image_manager.get_image("bg_livingroom_noon"),
+            "evening": image_manager.get_image("bg_livingroom_evening"),
+            "night": image_manager.get_image("bg_livingroom_evening"),
+            "late_night": image_manager.get_image("bg_livingroom_evening"),
+        }
 
-        if not self.background_morning or not self.background_evening:
-            self._create_fallback_background()
+        # 檢查是否需要創建備用背景
+        missing_backgrounds = [
+            key for key, bg in self.backgrounds.items() if bg is None
+        ]
+        if missing_backgrounds:
+            self._create_fallback_backgrounds(missing_backgrounds)
 
-    def _create_fallback_background(self):
+    def _create_fallback_backgrounds(self, missing_keys):
         """創建備用背景"""
         screen_width, screen_height = self.get_screen_size()
 
-        self.background_morning = pygame.Surface((screen_width, screen_height))
-        self.background_morning.fill((255, 255, 200))
-        self._create_background_layout(self.background_morning, "morning")
+        # 為每個缺失的時間段創建備用背景
+        for time_key in missing_keys:
+            surface = pygame.Surface((screen_width, screen_height))
 
-        self.background_evening = pygame.Surface((screen_width, screen_height))
-        self.background_evening.fill((100, 100, 200))
-        self._create_background_layout(self.background_evening, "evening")
+            # 根據時間段設置顏色
+            if time_key == "early_morning":
+                surface.fill((255, 240, 220))  # 淡橙色
+                self._create_background_layout(surface, "early_morning")
+            elif time_key == "morning":
+                surface.fill((255, 255, 200))  # 淡黃色
+                self._create_background_layout(surface, "morning")
+            elif time_key == "afternoon":
+                surface.fill((255, 250, 150))  # 金黃色
+                self._create_background_layout(surface, "afternoon")
+            elif time_key in ["evening", "night", "late_night"]:
+                surface.fill((100, 100, 200))  # 深藍色
+                self._create_background_layout(surface, "evening")
+
+            self.backgrounds[time_key] = surface
 
     def _create_background_layout(self, surface, time_of_day):
         """建立背景佈局"""
         screen_width, screen_height = self.get_screen_size()
 
-        if time_of_day == "morning":
+        # 根據時間段設置顏色主題
+        if time_of_day == "early_morning":
+            floor_color = (250, 230, 200)
+            furniture_color = (180, 140, 100)
+            window_color = (255, 245, 220)
+        elif time_of_day == "morning":
             floor_color = (240, 220, 180)
             furniture_color = (160, 120, 80)
             window_color = (255, 255, 200)
-        else:
+        elif time_of_day == "afternoon":
+            floor_color = (245, 225, 160)
+            furniture_color = (170, 130, 90)
+            window_color = (255, 250, 150)
+        else:  # evening, night, late_night
             floor_color = (180, 160, 140)
             furniture_color = (120, 90, 60)
             window_color = (50, 50, 100)
@@ -160,11 +191,17 @@ class EnhancedLivingRoomScene(BaseScene, ActivityResultMixin):
         # 統一小寫
         period = str(period).lower()
 
-        # 上午/下午都用早晨背景，其餘用傍晚背景
-        if period in ["morning", "afternoon"]:
-            current_bg = self.background_morning
-        else:
-            current_bg = self.background_evening
+        # 使用新的背景系統 - 直接從backgrounds字典獲取
+        current_bg = self.backgrounds.get(period)
+
+        # 如果找不到對應時間段的背景，使用備用邏輯
+        if current_bg is None:
+            if period in ["early_morning", "morning", "afternoon"]:
+                current_bg = self.backgrounds.get("morning") or self.backgrounds.get(
+                    "early_morning"
+                )
+            else:
+                current_bg = self.backgrounds.get("evening")
 
         # 縮放背景到螢幕大小 - 使用像素完整縮放
         screen_size = self.get_screen_size()

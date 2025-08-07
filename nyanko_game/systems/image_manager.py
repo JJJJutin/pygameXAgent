@@ -40,14 +40,26 @@ class ImageManager:
         """載入背景圖片"""
         backgrounds_path = os.path.join(Paths.BACKGROUNDS_DIR)
 
-        # 客廳背景
+        # 客廳背景 - 對應所有時間段
+        self._load_image(
+            "bg_livingroom_early_morning",
+            os.path.join(backgrounds_path, "bg_livingroom_early_morning.png"),
+        )
         self._load_image(
             "bg_livingroom_morning",
-            os.path.join(backgrounds_path, "bg_livingroom-AM.png"),
+            os.path.join(backgrounds_path, "bg_livingroom-morning.png"),
+        )
+        self._load_image(
+            "bg_livingroom_noon",
+            os.path.join(backgrounds_path, "bg_livingroom_noon.png"),
+        )
+        self._load_image(
+            "bg_livingroom_afternoon",
+            os.path.join(backgrounds_path, "bg_livingroom-PM.png"),
         )
         self._load_image(
             "bg_livingroom_evening",
-            os.path.join(backgrounds_path, "bg_livingroom-PM.png"),
+            os.path.join(backgrounds_path, "bg_livingroom_evening.png"),
         )
 
     def _load_characters(self):
@@ -98,10 +110,16 @@ class ImageManager:
         if "bg_" in key:
             # 背景佔位圖片
             surface = pygame.Surface((1280, 720))
-            if "morning" in key:
+            if "early_morning" in key:
+                surface.fill((255, 240, 220))  # 淡橙色代表清晨
+            elif "morning" in key:
                 surface.fill((255, 255, 200))  # 淡黃色代表早上
+            elif "noon" in key or "afternoon" in key:
+                surface.fill((255, 250, 150))  # 金黃色代表中午/下午
+            elif "evening" in key:
+                surface.fill((255, 200, 150))  # 橙紅色代表傍晚
             else:
-                surface.fill((100, 100, 200))  # 深藍色代表晚上
+                surface.fill((100, 100, 200))  # 深藍色代表夜晚
         else:
             # 角色佔位圖片
             surface = pygame.Surface((300, 400))
@@ -154,10 +172,25 @@ class ImageManager:
             pygame.Surface: 背景圖片
         """
         if location == "living_room":
-            if time_period in ["morning", "afternoon"]:
-                return self.get_image("bg_livingroom_morning")
-            else:
-                return self.get_image("bg_livingroom_evening")
+            # 根據時間段返回對應的背景圖片
+            time_mapping = {
+                "early_morning": "bg_livingroom_early_morning",
+                "morning": "bg_livingroom_morning",
+                "afternoon": "bg_livingroom_noon",  # 下午使用noon圖片
+                "evening": "bg_livingroom_evening",
+                "night": "bg_livingroom_evening",  # 夜晚也使用evening圖片
+                "late_night": "bg_livingroom_evening",  # 深夜也使用evening圖片
+            }
+
+            # 獲取對應的背景圖片key
+            bg_key = time_mapping.get(time_period, "bg_livingroom_morning")
+            background = self.get_image(bg_key)
+
+            # 如果找不到對應圖片，回退到morning背景
+            if background is None:
+                background = self.get_image("bg_livingroom_morning")
+
+            return background
 
         # 預設返回早上的客廳背景
         return self.get_image("bg_livingroom_morning")
